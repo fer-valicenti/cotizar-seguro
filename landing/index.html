@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cotizá tu seguro</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    background: #f4f6f8;
+    margin: 0;
+    padding: 24px 16px;
+    display: flex;
+    justify-content: center;
+  }
+  .card {
+    background: #fff;
+    max-width: 420px;
+    width: 100%;
+    padding: 32px 24px;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  }
+  h1 { font-size: 22px; margin-bottom: 4px; }
+  p.sub { color: #666; margin-top: 0; margin-bottom: 24px; font-size: 14px; }
+  label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; margin-top: 16px; }
+  input, select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 15px;
+  }
+  button {
+    width: 100%;
+    margin-top: 24px;
+    padding: 14px;
+    background: #25D366;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  button:disabled { opacity: 0.6; cursor: not-allowed; }
+  .error { color: #c0392b; font-size: 13px; margin-top: 8px; display: none; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>Cotizá tu seguro en minutos</h1>
+    <p class="sub">Completá tus datos y seguimos la charla por WhatsApp.</p>
+
+    <form id="lead-form">
+      <label for="nombre">Nombre y apellido</label>
+      <input type="text" id="nombre" required>
+
+      <label for="telefono">WhatsApp (con código de área, sin 0 ni 15)</label>
+      <input type="tel" id="telefono" placeholder="Ej: 1122334455" required>
+
+      <label for="ramo">¿Qué querés asegurar?</label>
+      <select id="ramo" required>
+        <option value="">Elegí una opción</option>
+        <option value="Auto">Auto</option>
+        <option value="Hogar">Hogar</option>
+        <option value="Accidentes Personales">Accidentes Personales</option>
+        <option value="Comercio">Comercio</option>
+        <option value="Vida">Vida</option>
+      </select>
+
+      <button type="submit" id="submit-btn">Continuar por WhatsApp</button>
+      <div class="error" id="error-msg">Hubo un problema. Intentá de nuevo o escribinos directamente.</div>
+    </form>
+  </div>
+
+  <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+    // Reemplazar con los valores reales del proyecto (la ANON/PUBLISHABLE key es segura
+    // para usar en el navegador: con RLS activo solo puede insertar leads, nada más).
+    const SUPABASE_URL = 'https://gnanlhiuygpepewgksnp.supabase.co';
+    const SUPABASE_ANON_KEY = 'PEGAR_ACA_LA_ANON_KEY';
+
+    // Número de WhatsApp del PAS/gestor que recibe al cliente (formato internacional, sin +).
+    const NUMERO_WHATSAPP_DESTINO = '549XXXXXXXXXX';
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const MENSAJES_POR_RAMO = {
+      'Auto': (nombre) => `Hola! Soy ${nombre}, quiero cotizar un seguro de *Auto*.`,
+      'Hogar': (nombre) => `Hola! Soy ${nombre}, quiero cotizar un seguro de *Hogar*.`,
+      'Accidentes Personales': (nombre) => `Hola! Soy ${nombre}, quiero cotizar un seguro de *Accidentes Personales*.`,
+      'Comercio': (nombre) => `Hola! Soy ${nombre}, quiero cotizar un seguro de *Comercio*.`,
+      'Vida': (nombre) => `Hola! Soy ${nombre}, quiero cotizar un seguro de *Vida*.`,
+    };
+
+    const form = document.getElementById('lead-form');
+    const errorMsg = document.getElementById('error-msg');
+    const submitBtn = document.getElementById('submit-btn');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      errorMsg.style.display = 'none';
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Enviando...';
+
+      const nombreCompleto = document.getElementById('nombre').value.trim();
+      const telefono = document.getElementById('telefono').value.trim();
+      const ramo = document.getElementById('ramo').value;
+      const [nombre, ...resto] = nombreCompleto.split(' ');
+      const apellido = resto.join(' ') || '-';
+
+      const { error } = await supabase.from('clientes').insert({
+        nombre,
+        apellido,
+        telefono: '54' + telefono.replace(/[^\d]/g, ''),
+        origen_lead: 'landing',
+        notas: `Interés inicial: ${ramo}`,
+      });
+
+      if (error) {
+        console.error(error);
+        errorMsg.style.display = 'block';
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Continuar por WhatsApp';
+        return;
+      }
+
+      const mensaje = MENSAJES_POR_RAMO[ramo](nombre);
+      const link = `https://wa.me/${NUMERO_WHATSAPP_DESTINO}?text=${encodeURIComponent(mensaje)}`;
+      window.location.href = link;
+    });
+  </script>
+</body>
+</html>
