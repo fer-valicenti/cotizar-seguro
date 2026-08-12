@@ -1,6 +1,6 @@
 // alertas.js
 // Corre diariamente (cron / n8n / GitHub Actions) para detectar
-// pólizas y cuotas que vencen en 30, 15 o 5 días, y generar el link de WhatsApp.
+// pólizas y cuotas que vencen en 15 o 5 días, y generar el link de WhatsApp.
 
 import { createClient } from '@supabase/supabase-js';
 import 'dotenv/config';
@@ -10,13 +10,13 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY // service role: el cron corre server-side
 );
 
-const DIAS_ANTICIPACION = [30, 15, 5];
+const DIAS_ANTICIPACION = [15, 5];
 
 const PLANTILLAS = {
   vencimiento_poliza: (nombre, ramo, fecha, dias) =>
-    `Hola ${nombre}! 👋 Te escribo de tu Productor de Seguros. ` +
-    `Tu póliza de *${ramo}* vence el *${fecha}* (en ${dias} días). ` +
-    `¿Querés que te prepare la renovación o cotizamos alguna mejora? Quedo atento 🙌`,
+    `Hola ${nombre}! 👋 Te escribo de tu Productor de Seguros para avisarte que ` +
+    `tu póliza de *${ramo}* vence el *${fecha}* (en ${dias} días). ` +
+    `Cualquier consulta, quedo atento 🙌`,
   vencimiento_cuota: (nombre, ramo, fecha, dias) =>
     `Hola ${nombre}! 👋 Te recuerdo que la cuota de tu póliza de *${ramo}* ` +
     `vence el *${fecha}* (en ${dias} días). Cualquier consulta sobre el pago, avisame por acá 🙌`,

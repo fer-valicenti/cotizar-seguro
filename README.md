@@ -29,7 +29,7 @@ CRM minimalista + alertas de vencimiento por WhatsApp para PAS.
 npm install
 ```
 
-Cargá 2-3 clientes y pólizas de prueba desde **Table Editor** en Supabase (con fechas de vencimiento a 30/15/5 días desde hoy para poder probar).
+Cargá 2-3 clientes y pólizas de prueba desde **Table Editor** en Supabase (con fechas de vencimiento a 15/5 días desde hoy para poder probar).
 
 ```bash
 npm run alertas

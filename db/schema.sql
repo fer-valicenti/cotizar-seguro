@@ -83,7 +83,7 @@ CREATE TABLE alertas (
     poliza_id UUID NOT NULL REFERENCES polizas(id) ON DELETE CASCADE,
     cuota_id UUID REFERENCES cuotas(id) ON DELETE CASCADE,
     tipo TEXT NOT NULL,              -- vencimiento_poliza, vencimiento_cuota
-    dias_anticipacion INT NOT NULL CHECK (dias_anticipacion IN (30,15,5)),
+    dias_anticipacion INT NOT NULL CHECK (dias_anticipacion IN (15,5)),
     fecha_alerta DATE NOT NULL,
     enlace_whatsapp TEXT,
     estado TEXT DEFAULT 'pendiente' CHECK (estado IN ('pendiente','enviada','ignorada')),
