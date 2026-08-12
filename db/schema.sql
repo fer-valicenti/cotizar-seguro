@@ -38,8 +38,10 @@ CREATE TABLE polizas (
     aseguradora_id INT REFERENCES aseguradoras(id),
     numero_poliza TEXT NOT NULL,
     fecha_emision DATE,
-    fecha_inicio_vigencia DATE NOT NULL,
-    fecha_vencimiento DATE NOT NULL,
+    -- Con hora y minuto exactos: el contrato de seguro fija el momento preciso en que
+    -- empieza y termina la cobertura (por convención, 12:00hs), no solo el día.
+    fecha_inicio_vigencia TIMESTAMPTZ NOT NULL,
+    fecha_vencimiento TIMESTAMPTZ NOT NULL,
     prima NUMERIC(12,2),
     forma_pago TEXT,                 -- mensual, trimestral, anual, contado
     cantidad_cuotas INT DEFAULT 1,

@@ -28,23 +28,65 @@ function generarLinkWhatsapp(telefono, mensaje) {
   return `https://wa.me/${telefonoLimpio}?text=${textoCodificado}`;
 }
 
+const ARGENTINA_TZ = 'America/Argentina/Buenos_Aires';
+
+// La cobertura de una póliza vence a una hora exacta (12:00hs por convención),
+// no "en algún momento del día". Formateamos mostrando esa hora para que el
+// cliente sepa con precisión hasta cuándo está cubierto.
 function formatearFecha(fecha) {
-  return new Date(fecha).toLocaleDateString('es-AR');
+  return new Date(fecha).toLocaleString('es-AR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    timeZone: ARGENTINA_TZ,
+  }).replace(',', ' a las') + 'hs';
+}
+
+// Las cuotas no tienen hora exacta de vencimiento (a diferencia de la vigencia
+// de la póliza), así que se muestran solo con el día.
+function formatearFechaSimple(fecha) {
+  return new Date(fecha + 'T12:00:00-03:00').toLocaleDateString('es-AR', { timeZone: ARGENTINA_TZ });
+}
+
+// El servidor (GitHub Actions) corre en UTC, pero "hoy" para este negocio es
+// el día calendario en Argentina. Lo calculamos explícito para no desfasarnos
+// un día en casos límite (ej: correrlo pasada la medianoche UTC).
+function hoyArgentinaISODate() {
+  return new Date().toLocaleDateString('en-CA', { timeZone: ARGENTINA_TZ }); // 'YYYY-MM-DD'
+}
+
+// Convierte "hoy (Argentina) + N días" al rango [00:00, 24:00) de ese día
+// calendario, en formato ISO con offset fijo -03:00 (Argentina no usa horario
+// de verano). Sirve para encontrar pólizas que vencen ese día, sin importar
+// la hora exacta de vencimiento dentro del día.
+function rangoDelDia(diasDesdeHoy) {
+  const base = new Date(`${hoyArgentinaISODate()}T00:00:00Z`);
+  base.setUTCDate(base.getUTCDate() + diasDesdeHoy);
+  const fechaStr = base.toISOString().slice(0, 10);
+
+  const inicio = `${fechaStr}T00:00:00-03:00`;
+  const finBase = new Date(`${fechaStr}T00:00:00-03:00`);
+  finBase.setUTCDate(finBase.getUTCDate() + 1);
+  const fin = finBase.toISOString();
+
+  return { fechaStr, inicio, fin };
 }
 
 async function detectarVencimientosPolizas() {
-  const hoy = new Date();
+  const hoyStr = hoyArgentinaISODate();
 
   for (const dias of DIAS_ANTICIPACION) {
-    const fechaObjetivo = new Date(hoy);
-    fechaObjetivo.setDate(hoy.getDate() + dias);
-    const fechaObjetivoStr = fechaObjetivo.toISOString().slice(0, 10);
+    const { inicio, fin } = rangoDelDia(dias);
 
     const { data: polizas, error } = await supabase
       .from('polizas')
       .select('id, numero_poliza, fecha_vencimiento, cliente_id, clientes(nombre, apellido, telefono), ramos(nombre)')
       .eq('estado', 'activa')
-      .eq('fecha_vencimiento', fechaObjetivoStr);
+      .gte('fecha_vencimiento', inicio)
+      .lt('fecha_vencimiento', fin);
 
     if (error) throw error;
 
@@ -64,7 +106,7 @@ async function detectarVencimientosPolizas() {
           poliza_id: poliza.id,
           tipo: 'vencimiento_poliza',
           dias_anticipacion: dias,
-          fecha_alerta: hoy.toISOString().slice(0, 10),
+          fecha_alerta: hoyStr,
           enlace_whatsapp: enlace,
           estado: 'pendiente',
         },
@@ -78,12 +120,10 @@ async function detectarVencimientosPolizas() {
 }
 
 async function detectarVencimientosCuotas() {
-  const hoy = new Date();
+  const hoyStr = hoyArgentinaISODate();
 
   for (const dias of DIAS_ANTICIPACION) {
-    const fechaObjetivo = new Date(hoy);
-    fechaObjetivo.setDate(hoy.getDate() + dias);
-    const fechaObjetivoStr = fechaObjetivo.toISOString().slice(0, 10);
+    const { fechaStr: fechaObjetivoStr } = rangoDelDia(dias);
 
     const { data: cuotas, error } = await supabase
       .from('cuotas')
@@ -98,7 +138,7 @@ async function detectarVencimientosCuotas() {
       const mensaje = PLANTILLAS.vencimiento_cuota(
         cliente.nombre,
         cuota.polizas.ramos.nombre,
-        formatearFecha(cuota.fecha_vencimiento_cuota),
+        formatearFechaSimple(cuota.fecha_vencimiento_cuota),
         dias
       );
       const enlace = generarLinkWhatsapp(cliente.telefono, mensaje);
@@ -109,7 +149,7 @@ async function detectarVencimientosCuotas() {
           cuota_id: cuota.id,
           tipo: 'vencimiento_cuota',
           dias_anticipacion: dias,
-          fecha_alerta: hoy.toISOString().slice(0, 10),
+          fecha_alerta: hoyStr,
           enlace_whatsapp: enlace,
           estado: 'pendiente',
         },

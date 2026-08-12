@@ -15,6 +15,8 @@ CRM minimalista + alertas de vencimiento por WhatsApp para PAS.
 2. Pegá el contenido de [`db/schema.sql`](db/schema.sql) completo.
 3. Click en **Run**. Deberías ver las tablas `clientes`, `polizas`, `cuotas`, `interacciones`, `alertas`, `ramos`, `aseguradoras` en **Table Editor**.
 
+> Si ya tenías esta base creada antes de que `fecha_inicio_vigencia`/`fecha_vencimiento` pasaran a incluir la hora exacta, corré también [`db/migracion_vigencia_con_hora.sql`](db/migracion_vigencia_con_hora.sql) una sola vez.
+
 ## Paso 3 — Obtener credenciales
 
 1. En el dashboard, andá a **Project Settings** > **API**.
@@ -29,7 +31,7 @@ CRM minimalista + alertas de vencimiento por WhatsApp para PAS.
 npm install
 ```
 
-Cargá 2-3 clientes y pólizas de prueba desde **Table Editor** en Supabase (con fechas de vencimiento a 15/5 días desde hoy para poder probar).
+Cargá 2-3 clientes y pólizas de prueba desde **Table Editor** en Supabase (con `fecha_vencimiento` a 15/5 días desde hoy para poder probar). Ojo: `fecha_inicio_vigencia` y `fecha_vencimiento` son fecha **y hora** (Supabase te muestra un selector de fecha+hora al cargar la fila) — la convención habitual es 12:00hs.
 
 ```bash
 npm run alertas

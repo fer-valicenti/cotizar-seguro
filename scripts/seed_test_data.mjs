@@ -3,10 +3,13 @@ import 'dotenv/config';
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
-function addDays(days) {
+// La vigencia vence a una hora exacta (12:00hs Argentina por convención), no
+// "en algún momento del día".
+function addDaysAlMediodia(days) {
   const d = new Date();
   d.setDate(d.getDate() + days);
-  return d.toISOString().slice(0, 10);
+  const fechaStr = d.toISOString().slice(0, 10);
+  return `${fechaStr}T12:00:00-03:00`;
 }
 
 async function main() {
@@ -27,9 +30,9 @@ async function main() {
   if (clientesError) throw clientesError;
 
   const polizasData = [
-    { cliente_id: clientes[0].id, ramo_id: ramoId('Vehiculo'), numero_poliza: 'TEST-AUTO-001', fecha_inicio_vigencia: addDays(-335), fecha_vencimiento: addDays(30), prima: 50000, estado: 'activa' },
-    { cliente_id: clientes[1].id, ramo_id: ramoId('Hogar'), numero_poliza: 'TEST-HOGAR-001', fecha_inicio_vigencia: addDays(-350), fecha_vencimiento: addDays(15), prima: 20000, estado: 'activa' },
-    { cliente_id: clientes[2].id, ramo_id: ramoId('Vida'), numero_poliza: 'TEST-VIDA-001', fecha_inicio_vigencia: addDays(-360), fecha_vencimiento: addDays(5), prima: 15000, estado: 'activa' },
+    { cliente_id: clientes[0].id, ramo_id: ramoId('Vehiculo'), numero_poliza: 'TEST-AUTO-001', fecha_inicio_vigencia: addDaysAlMediodia(-335), fecha_vencimiento: addDaysAlMediodia(30), prima: 50000, estado: 'activa' },
+    { cliente_id: clientes[1].id, ramo_id: ramoId('Hogar'), numero_poliza: 'TEST-HOGAR-001', fecha_inicio_vigencia: addDaysAlMediodia(-350), fecha_vencimiento: addDaysAlMediodia(15), prima: 20000, estado: 'activa' },
+    { cliente_id: clientes[2].id, ramo_id: ramoId('Vida'), numero_poliza: 'TEST-VIDA-001', fecha_inicio_vigencia: addDaysAlMediodia(-360), fecha_vencimiento: addDaysAlMediodia(5), prima: 15000, estado: 'activa' },
   ];
 
   const { error: polizasError } = await supabase.from('polizas').insert(polizasData);
