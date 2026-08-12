@@ -4,7 +4,7 @@
 -- ===== CATÁLOGOS =====
 CREATE TABLE ramos (
     id SERIAL PRIMARY KEY,
-    nombre TEXT NOT NULL UNIQUE, -- Auto, Hogar, Accidentes Personales, Comercio, Vida
+    nombre TEXT NOT NULL UNIQUE, -- Vehiculo, Hogar, Accidentes Personales, Comercio, Vida, Otros
     plantilla_mensaje TEXT       -- template base de WhatsApp para este ramo
 );
 
@@ -93,8 +93,9 @@ CREATE TABLE alertas (
 
 -- ===== DATOS INICIALES DE CATÁLOGO =====
 INSERT INTO ramos (nombre) VALUES
-    ('Auto'),
+    ('Vehiculo'),
     ('Hogar'),
     ('Accidentes Personales'),
     ('Comercio'),
-    ('Vida');
+    ('Vida'),
+    ('Otros');

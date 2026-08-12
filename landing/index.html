@@ -63,11 +63,12 @@
       <label for="ramo">¿Qué querés asegurar?</label>
       <select id="ramo" required>
         <option value="">Elegí una opción</option>
-        <option value="Auto">Auto</option>
+        <option value="Vehiculo">Vehículo</option>
         <option value="Hogar">Hogar</option>
         <option value="Accidentes Personales">Accidentes Personales</option>
         <option value="Comercio">Comercio</option>
         <option value="Vida">Vida</option>
+        <option value="Otros">Otros (viajero, y más)</option>
       </select>
 
       <button type="submit" id="submit-btn">Continuar por WhatsApp</button>
@@ -89,11 +90,12 @@
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     const MENSAJES_POR_RAMO = {
-      'Auto': (nombre) => `Hola! Soy ${nombre}, quiero cotizar un seguro de *Auto*.`,
+      'Vehiculo': (nombre) => `Hola! Soy ${nombre}, quiero cotizar un seguro de *Vehículo*.`,
       'Hogar': (nombre) => `Hola! Soy ${nombre}, quiero cotizar un seguro de *Hogar*.`,
       'Accidentes Personales': (nombre) => `Hola! Soy ${nombre}, quiero cotizar un seguro de *Accidentes Personales*.`,
       'Comercio': (nombre) => `Hola! Soy ${nombre}, quiero cotizar un seguro de *Comercio*.`,
       'Vida': (nombre) => `Hola! Soy ${nombre}, quiero cotizar un seguro de *Vida*.`,
+      'Otros': (nombre) => `Hola! Soy ${nombre}, quiero cotizar un seguro (no está en la lista, te cuento cuál).`,
     };
 
     const form = document.getElementById('lead-form');

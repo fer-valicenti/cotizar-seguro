@@ -27,7 +27,7 @@ async function main() {
   if (clientesError) throw clientesError;
 
   const polizasData = [
-    { cliente_id: clientes[0].id, ramo_id: ramoId('Auto'), numero_poliza: 'TEST-AUTO-001', fecha_inicio_vigencia: addDays(-335), fecha_vencimiento: addDays(30), prima: 50000, estado: 'activa' },
+    { cliente_id: clientes[0].id, ramo_id: ramoId('Vehiculo'), numero_poliza: 'TEST-AUTO-001', fecha_inicio_vigencia: addDays(-335), fecha_vencimiento: addDays(30), prima: 50000, estado: 'activa' },
     { cliente_id: clientes[1].id, ramo_id: ramoId('Hogar'), numero_poliza: 'TEST-HOGAR-001', fecha_inicio_vigencia: addDays(-350), fecha_vencimiento: addDays(15), prima: 20000, estado: 'activa' },
     { cliente_id: clientes[2].id, ramo_id: ramoId('Vida'), numero_poliza: 'TEST-VIDA-001', fecha_inicio_vigencia: addDays(-360), fecha_vencimiento: addDays(5), prima: 15000, estado: 'activa' },
   ];
