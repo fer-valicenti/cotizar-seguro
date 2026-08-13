@@ -381,7 +381,11 @@
     });
 
     // ---------- Clientes y sus pólizas ----------
+    // Los valores en minúscula son los que se guardan en la base (no cambian,
+    // para no romper filtros ni datos ya cargados) — las etiquetas son solo
+    // para mostrar, con mayúscula inicial y acentos correctos.
     const ESTADOS_POLIZA = ['activa', 'vencida', 'cancelada', 'renovada'];
+    const ESTADO_POLIZA_LABEL = { activa: 'Activa', vencida: 'Vencida', cancelada: 'Cancelada', renovada: 'Renovada' };
     let ultimosClientes = []; // cache para el buscador y para abrir "editar" sin refetch
 
     async function cargarClientes() {
@@ -429,11 +433,11 @@
             c.polizas && c.polizas.length
               ? c.polizas.map((p) => `
                 <div class="poliza-badge">
-                  <span class="estado-pill estado-${p.estado}">${p.estado}</span>
+                  <span class="estado-pill estado-${p.estado}">${ESTADO_POLIZA_LABEL[p.estado] || p.estado}</span>
                   <span>${p.ramos.nombre}${p.detalle_ramo ? ` (${p.detalle_ramo})` : ''} — ${p.numero_poliza}</span>
                   <div class="acciones-poliza">
                     <select data-poliza-id="${p.id}">
-                      ${ESTADOS_POLIZA.map(e => `<option value="${e}" ${e === p.estado ? 'selected' : ''}>${e}</option>`).join('')}
+                      ${ESTADOS_POLIZA.map(e => `<option value="${e}" ${e === p.estado ? 'selected' : ''}>${ESTADO_POLIZA_LABEL[e]}</option>`).join('')}
                     </select>
                     ${p.cantidad_cuotas > 1 ? `<button type="button" class="btn-editar" data-ver-cuotas="${p.id}">Cuotas</button>` : ''}
                     <button type="button" class="btn-editar" data-editar-poliza="${p.id}">Editar</button>
@@ -458,7 +462,7 @@
           }
           const pill = sel.closest('.poliza-badge').querySelector('.estado-pill');
           pill.className = `estado-pill estado-${nuevoEstado}`;
-          pill.textContent = nuevoEstado;
+          pill.textContent = ESTADO_POLIZA_LABEL[nuevoEstado] || nuevoEstado;
         });
       });
 
@@ -532,7 +536,9 @@
 
     // ---------- Historial de interacciones ----------
     const TIPOS_INTERACCION = ['cotizacion', 'seguimiento', 'cobranza', 'renovacion'];
+    const TIPO_INTERACCION_LABEL = { cotizacion: 'Cotización', seguimiento: 'Seguimiento', cobranza: 'Cobranza', renovacion: 'Renovación' };
     const RESULTADOS_INTERACCION = ['respondido', 'sin respuesta', 'cerrado', 'perdido'];
+    const RESULTADO_LABEL = { respondido: 'Respondido', 'sin respuesta': 'Sin respuesta', cerrado: 'Cerrado', perdido: 'Perdido' };
 
     async function toggleInteracciones(clienteId) {
       const panel = document.getElementById(`interacciones-panel-${clienteId}`);
@@ -562,7 +568,7 @@
       const historial = data.length
         ? data.map((i) => `
             <div class="interaccion-item">
-              <span class="tipo-resultado">${i.tipo}${i.resultado ? ` — ${i.resultado}` : ''}</span>
+              <span class="tipo-resultado">${TIPO_INTERACCION_LABEL[i.tipo] || i.tipo}${i.resultado ? ` — ${RESULTADO_LABEL[i.resultado] || i.resultado}` : ''}</span>
               <span class="fecha-int"> · ${new Date(i.fecha).toLocaleDateString('es-AR')}</span>
               ${i.mensaje ? `<div>${i.mensaje}</div>` : ''}
             </div>
@@ -572,10 +578,10 @@
       panel.innerHTML = historial + `
         <div class="interaccion-form">
           <select id="int-tipo-${clienteId}">
-            ${TIPOS_INTERACCION.map(t => `<option value="${t}">${t}</option>`).join('')}
+            ${TIPOS_INTERACCION.map(t => `<option value="${t}">${TIPO_INTERACCION_LABEL[t]}</option>`).join('')}
           </select>
           <select id="int-resultado-${clienteId}">
-            ${RESULTADOS_INTERACCION.map(r => `<option value="${r}">${r}</option>`).join('')}
+            ${RESULTADOS_INTERACCION.map(r => `<option value="${r}">${RESULTADO_LABEL[r]}</option>`).join('')}
           </select>
           <input type="text" id="int-mensaje-${clienteId}" placeholder="Notas del contacto (opcional)">
           <button type="button" data-registrar-interaccion="${clienteId}">Registrar</button>
