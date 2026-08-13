@@ -1,0 +1,4 @@
+Nombre,Apellido,Telefono,Email,DNI_CUIT,Fecha_Nacimiento,Ramo,Detalle_Ramo,Numero_Poliza,Aseguradora,Productor,Fecha_Inicio_Vigencia,Fecha_Vencimiento,Prima,Forma_Pago
+Juan,Perez,5492231234567,,,1985-04-20,Vehiculo,,AUTO-2026-001,Rio Uruguay Seguros,Carolina Sullivan,2026-03-01,2027-03-01,480000,mensual
+Juan,Perez,5492231234567,,,1985-04-20,Hogar,,HOGAR-2026-014,Rio Uruguay Seguros,Carolina Sullivan,2026-05-15,2027-05-15,180000,debito_automatico
+Maria,Gomez,5492239876543,maria@ejemplo.com,,1990-11-02,Otros,seguro de viajero,VIAJE-2026-003,,,2026-06-01,2026-06-15,25000,contado

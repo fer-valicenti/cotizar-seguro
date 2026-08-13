@@ -4,10 +4,12 @@
   "description": "CRM minimalista + alertas de vencimiento por WhatsApp para PAS",
   "type": "module",
   "scripts": {
-    "alertas": "node scripts/alertas.js"
+    "alertas": "node scripts/alertas.js",
+    "importar": "node scripts/importar_cartera.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",
-    "dotenv": "^16.4.5"
+    "dotenv": "^16.4.5",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-latest/xlsx-latest.tgz"
   }
 }
