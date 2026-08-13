@@ -143,6 +143,15 @@
 
   .banner-edicion { background: #FFF4E0; border: 1.5px solid #E8C77E; border-radius: 8px; padding: 10px 12px; font-size: 12.5px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
   .banner-edicion button { background: none; border: none; text-decoration: underline; color: var(--color-primary); font-size: 12px; cursor: pointer; padding: 2px; }
+
+  .interaccion-item { border-bottom: 1px solid var(--color-border); padding: 6px 0; font-size: 12px; }
+  .interaccion-item:last-child { border-bottom: none; }
+  .interaccion-item .tipo-resultado { font-weight: 700; color: var(--color-primary); }
+  .interaccion-item .fecha-int { color: var(--color-muted); font-size: 11px; }
+  .interaccion-form { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+  .interaccion-form select { width: auto; padding: 6px 8px; font-size: 11.5px; }
+  .interaccion-form input { flex: 1; min-width: 120px; padding: 6px 8px; font-size: 11.5px; }
+  .interaccion-form button { padding: 6px 10px; font-size: 11.5px; background: var(--color-primary); color: #fff; }
 </style>
 </head>
 <body>
@@ -411,7 +420,10 @@
               <div class="nombre">${c.nombre} ${c.apellido}</div>
               <div class="telefono">${c.telefono}</div>
             </div>
-            <button type="button" class="btn-editar" data-editar-cliente="${c.id}">Editar</button>
+            <div class="acciones-poliza">
+              <button type="button" class="btn-editar" data-ver-interacciones="${c.id}">Interacciones</button>
+              <button type="button" class="btn-editar" data-editar-cliente="${c.id}">Editar</button>
+            </div>
           </div>
           ${
             c.polizas && c.polizas.length
@@ -431,6 +443,7 @@
               `).join('')
               : '<p class="sin-polizas">Sin pólizas cargadas</p>'
           }
+          <div class="cuotas-panel" id="interacciones-panel-${c.id}" style="display:none;"></div>
         </div>
       `).join('');
 
@@ -457,6 +470,9 @@
       });
       cont.querySelectorAll('[data-ver-cuotas]').forEach((btn) => {
         btn.addEventListener('click', () => toggleCuotas(btn.dataset.verCuotas, btn));
+      });
+      cont.querySelectorAll('[data-ver-interacciones]').forEach((btn) => {
+        btn.addEventListener('click', () => toggleInteracciones(btn.dataset.verInteracciones));
       });
     }
 
@@ -511,6 +527,72 @@
           b.disabled = true;
           b.textContent = 'Pagada ✓';
         });
+      });
+    }
+
+    // ---------- Historial de interacciones ----------
+    const TIPOS_INTERACCION = ['cotizacion', 'seguimiento', 'cobranza', 'renovacion'];
+    const RESULTADOS_INTERACCION = ['respondido', 'sin respuesta', 'cerrado', 'perdido'];
+
+    async function toggleInteracciones(clienteId) {
+      const panel = document.getElementById(`interacciones-panel-${clienteId}`);
+      if (panel.style.display === 'block') {
+        panel.style.display = 'none';
+        return;
+      }
+      panel.style.display = 'block';
+      await recargarInteracciones(clienteId);
+    }
+
+    async function recargarInteracciones(clienteId) {
+      const panel = document.getElementById(`interacciones-panel-${clienteId}`);
+      panel.innerHTML = 'Cargando...';
+
+      const { data, error } = await supabase
+        .from('interacciones')
+        .select('id, tipo, mensaje, fecha, resultado')
+        .eq('cliente_id', clienteId)
+        .order('fecha', { ascending: false });
+
+      if (error) {
+        panel.innerHTML = `Error: ${error.message}`;
+        return;
+      }
+
+      const historial = data.length
+        ? data.map((i) => `
+            <div class="interaccion-item">
+              <span class="tipo-resultado">${i.tipo}${i.resultado ? ` — ${i.resultado}` : ''}</span>
+              <span class="fecha-int"> · ${new Date(i.fecha).toLocaleDateString('es-AR')}</span>
+              ${i.mensaje ? `<div>${i.mensaje}</div>` : ''}
+            </div>
+          `).join('')
+        : '<p class="sin-polizas">Sin contactos registrados todavía.</p>';
+
+      panel.innerHTML = historial + `
+        <div class="interaccion-form">
+          <select id="int-tipo-${clienteId}">
+            ${TIPOS_INTERACCION.map(t => `<option value="${t}">${t}</option>`).join('')}
+          </select>
+          <select id="int-resultado-${clienteId}">
+            ${RESULTADOS_INTERACCION.map(r => `<option value="${r}">${r}</option>`).join('')}
+          </select>
+          <input type="text" id="int-mensaje-${clienteId}" placeholder="Notas del contacto (opcional)">
+          <button type="button" data-registrar-interaccion="${clienteId}">Registrar</button>
+        </div>
+      `;
+
+      panel.querySelector(`[data-registrar-interaccion="${clienteId}"]`).addEventListener('click', async () => {
+        const tipo = document.getElementById(`int-tipo-${clienteId}`).value;
+        const resultado = document.getElementById(`int-resultado-${clienteId}`).value;
+        const mensaje = document.getElementById(`int-mensaje-${clienteId}`).value.trim() || null;
+
+        const { error } = await supabase.from('interacciones').insert({ cliente_id: clienteId, tipo, resultado, mensaje });
+        if (error) {
+          alert('Error al registrar: ' + error.message);
+          return;
+        }
+        recargarInteracciones(clienteId);
       });
     }
 
@@ -636,6 +718,23 @@
         origen_lead: document.getElementById('c-origen').value,
         notas: document.getElementById('c-notas').value.trim() || null,
       };
+
+      // Si es un cliente nuevo (no edición), avisar si ya existe alguien con ese teléfono.
+      if (!editingClienteId) {
+        const { data: existentes } = await supabase
+          .from('clientes')
+          .select('id, nombre, apellido')
+          .eq('telefono', datos.telefono);
+
+        if (existentes && existentes.length) {
+          const ya = existentes[0];
+          const seguir = confirm(
+            `Ya existe un cliente con este teléfono: ${ya.nombre} ${ya.apellido}.\n\n` +
+            `Aceptar = crear un cliente nuevo de todos modos.\nCancelar = no crear (podés ir a "Clientes" y editarlo).`
+          );
+          if (!seguir) return;
+        }
+      }
 
       const { error } = editingClienteId
         ? await supabase.from('clientes').update(datos).eq('id', editingClienteId)

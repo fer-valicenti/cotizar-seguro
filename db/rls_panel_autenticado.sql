@@ -26,6 +26,9 @@ CREATE POLICY "panel_insert_productores" ON productores FOR INSERT TO authentica
 CREATE POLICY "panel_select_alertas" ON alertas FOR SELECT TO authenticated USING (true);
 CREATE POLICY "panel_update_alertas" ON alertas FOR UPDATE TO authenticated USING (true);
 
+CREATE POLICY "panel_select_interacciones" ON interacciones FOR SELECT TO authenticated USING (true);
+CREATE POLICY "panel_insert_interacciones" ON interacciones FOR INSERT TO authenticated WITH CHECK (true);
+
 -- Nota: no se otorga DELETE por este camino a propósito — borrar registros
 -- se sigue haciendo desde Table Editor en Supabase, como medida de seguridad
 -- extra contra un borrado accidental desde el panel.
