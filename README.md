@@ -80,8 +80,24 @@ Mini app con login para cargar clientes y pólizas sin usar Table Editor de Supa
 
 El panel no permite borrar registros (a propósito, como medida de seguridad) — eso se sigue haciendo desde Table Editor.
 
+## Paso 10 — Importar la cartera existente (Excel/CSV)
+
+Para cargar muchos clientes/pólizas de una sola vez en vez de uno por uno:
+
+1. Completá [`plantilla_cartera.csv`](plantilla_cartera.csv) con tu cartera (una fila por póliza; si un cliente tiene varias, repetí sus datos en cada fila — se reconoce por teléfono y no se duplica). Podés editarla en Excel/Sheets y guardarla como `.csv` o `.xlsx`.
+2. Probá primero sin tocar nada real:
+   ```bash
+   node scripts/importar_cartera.mjs tu_archivo.xlsx --dry-run
+   ```
+3. Si el resumen se ve bien, corré la importación real (sin `--dry-run`):
+   ```bash
+   node scripts/importar_cartera.mjs tu_archivo.xlsx
+   ```
+
+Ojo con los números de póliza puramente numéricos en Excel: si la columna no está formateada como texto, puede perder ceros a la izquierda. Si tenés casos así, formateá esa columna como "Texto" en Excel antes de exportar.
+
 ## Próximos pasos
 
 - Definir las secuencias de conversación por ramo.
 - Reemplazar el envío manual de links por WhatsApp Business API si el volumen lo justifica.
-- Importar cartera en bloque desde Excel, backups automáticos, estados automáticos (cuota/póliza vencida).
+- Estados automáticos ya resueltos (backups, vencimiento de póliza); queda pendiente el reporte de comisiones si en algún momento lo querés retomar.
