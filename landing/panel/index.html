@@ -120,6 +120,29 @@
   .estado-renovada { background: #E3ECF5; color: #1a4f8f; }
   .poliza-badge select { width: auto; padding: 4px 8px; font-size: 11.5px; margin-left: auto; }
   .sin-polizas { color: var(--color-muted); font-size: 12.5px; font-style: italic; }
+
+  .cliente-header { display: flex; justify-content: space-between; align-items: flex-start; }
+  .btn-editar { background: none; border: 1.5px solid var(--color-border); color: var(--color-primary); font-size: 11.5px; padding: 5px 10px; border-radius: 6px; cursor: pointer; white-space: nowrap; }
+  .poliza-badge .acciones-poliza { display: flex; gap: 6px; margin-left: auto; align-items: center; }
+  .poliza-badge select { width: auto; padding: 4px 8px; font-size: 11.5px; margin-left: 0; }
+
+  .cuotas-panel { background: var(--color-bg); border-radius: 8px; padding: 10px 12px; margin: 6px 0 4px; width: 100%; }
+  .cuota-fila { display: flex; align-items: center; gap: 8px; font-size: 12px; padding: 4px 0; }
+  .cuota-fila .n { font-weight: 700; width: 60px; }
+  .cuota-fila .fecha { color: var(--color-muted); flex: 1; }
+  .btn-pagar { background: var(--color-accent); color: #fff; border: none; font-size: 11px; padding: 4px 10px; border-radius: 6px; cursor: pointer; }
+  .btn-pagar:disabled { background: #cfd8dc; cursor: default; }
+
+  .search-box { margin-bottom: 14px; }
+  .search-box input { margin: 0; }
+
+  .add-inline { display: flex; gap: 6px; margin-top: 6px; }
+  .add-inline input { flex: 1; padding: 8px 10px; font-size: 12.5px; }
+  .add-inline button { padding: 8px 12px; font-size: 12px; background: var(--color-primary); color: #fff; white-space: nowrap; }
+  .toggle-add { background: none; border: none; color: var(--color-primary-light); font-size: 11.5px; text-decoration: underline; cursor: pointer; padding: 4px 0; }
+
+  .banner-edicion { background: #FFF4E0; border: 1.5px solid #E8C77E; border-radius: 8px; padding: 10px 12px; font-size: 12.5px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+  .banner-edicion button { background: none; border: none; text-decoration: underline; color: var(--color-primary); font-size: 12px; cursor: pointer; padding: 2px; }
 </style>
 </head>
 <body>
@@ -160,11 +183,17 @@
 
         <section id="tab-clientes" style="display:none;">
           <h2>Clientes y sus pólizas</h2>
+          <div class="search-box">
+            <input type="text" id="clientes-buscar" placeholder="Buscar por nombre, apellido o teléfono...">
+          </div>
           <div id="clientes-lista"><p class="empty-msg">Cargando...</p></div>
         </section>
 
         <section id="tab-cliente" style="display:none;">
-          <h2>Cargar cliente</h2>
+          <h2 id="cliente-form-titulo">Cargar cliente</h2>
+          <div class="banner-edicion" id="cliente-editando-banner" style="display:none;">
+            Editando cliente existente. <button type="button" id="cliente-cancelar-edicion">Cancelar</button>
+          </div>
           <form id="cliente-form">
             <div class="row2">
               <div><label for="c-nombre">Nombre</label><input type="text" id="c-nombre" required></div>
@@ -185,14 +214,17 @@
             </select>
             <label for="c-notas">Notas (opcional)</label>
             <input type="text" id="c-notas">
-            <button type="submit" class="primary">Guardar cliente</button>
+            <button type="submit" class="primary" id="cliente-submit-btn">Guardar cliente</button>
             <div class="error" id="cliente-error"></div>
             <div class="ok" id="cliente-ok">Cliente guardado ✓</div>
           </form>
         </section>
 
         <section id="tab-poliza" style="display:none;">
-          <h2>Cargar póliza</h2>
+          <h2 id="poliza-form-titulo">Cargar póliza</h2>
+          <div class="banner-edicion" id="poliza-editando-banner" style="display:none;">
+            Editando póliza existente. <button type="button" id="poliza-cancelar-edicion">Cancelar</button>
+          </div>
           <form id="poliza-form">
             <label for="p-cliente">Cliente</label>
             <select id="p-cliente" required><option value="">Cargando...</option></select>
@@ -217,10 +249,20 @@
               <div>
                 <label for="p-aseguradora">Aseguradora (opcional)</label>
                 <select id="p-aseguradora"><option value="">Sin especificar</option></select>
+                <button type="button" class="toggle-add" data-toggle-add="aseguradora">+ Agregar aseguradora nueva</button>
+                <div class="add-inline" id="add-aseguradora-wrap" style="display:none;">
+                  <input type="text" id="add-aseguradora-nombre" placeholder="Nombre de la aseguradora">
+                  <button type="button" id="add-aseguradora-btn">Agregar</button>
+                </div>
               </div>
               <div>
                 <label for="p-productor">Productor (opcional)</label>
                 <select id="p-productor"><option value="">Sin especificar</option></select>
+                <button type="button" class="toggle-add" data-toggle-add="productor">+ Agregar productor nuevo</button>
+                <div class="add-inline" id="add-productor-wrap" style="display:none;">
+                  <input type="text" id="add-productor-nombre" placeholder="Nombre del productor">
+                  <button type="button" id="add-productor-btn">Agregar</button>
+                </div>
               </div>
             </div>
 
@@ -253,7 +295,7 @@
             </div>
             <p class="sub" id="p-cuotas-preview" style="margin-top:8px;">Elegí inicio, vencimiento y forma de pago para calcular las cuotas.</p>
 
-            <button type="submit" class="primary">Guardar póliza</button>
+            <button type="submit" class="primary" id="poliza-submit-btn">Guardar póliza</button>
             <div class="error" id="poliza-error"></div>
             <div class="ok" id="poliza-ok">Póliza guardada — las cuotas (si corresponde) se generaron solas ✓</div>
           </form>
@@ -330,6 +372,7 @@
 
     // ---------- Clientes y sus pólizas ----------
     const ESTADOS_POLIZA = ['activa', 'vencida', 'cancelada', 'renovada'];
+    let ultimosClientes = []; // cache para el buscador y para abrir "editar" sin refetch
 
     async function cargarClientes() {
       const cont = document.getElementById('clientes-lista');
@@ -337,32 +380,53 @@
 
       const { data, error } = await supabase
         .from('clientes')
-        .select('id, nombre, apellido, telefono, polizas(id, numero_poliza, estado, detalle_ramo, ramos(nombre))')
+        .select(`
+          id, nombre, apellido, telefono, email, dni_cuit, origen_lead, notas,
+          polizas(id, numero_poliza, estado, detalle_ramo, ramo_id, aseguradora_id, productor_id,
+                   fecha_inicio_vigencia, fecha_vencimiento, prima, forma_pago, cantidad_cuotas,
+                   ramos(nombre))
+        `)
         .order('nombre');
 
       if (error) {
         cont.innerHTML = `<p class="empty-msg">Error: ${error.message}</p>`;
         return;
       }
-      if (!data || data.length === 0) {
-        cont.innerHTML = '<p class="empty-msg">No hay clientes cargados todavía.</p>';
+      ultimosClientes = data || [];
+      renderClientes(ultimosClientes);
+    }
+
+    function renderClientes(lista) {
+      const cont = document.getElementById('clientes-lista');
+      if (!lista || lista.length === 0) {
+        cont.innerHTML = '<p class="empty-msg">No hay clientes para mostrar.</p>';
         return;
       }
 
-      cont.innerHTML = data.map((c) => `
+      cont.innerHTML = lista.map((c) => `
         <div class="cliente-item">
-          <div class="nombre">${c.nombre} ${c.apellido}</div>
-          <div class="telefono">${c.telefono}</div>
+          <div class="cliente-header">
+            <div>
+              <div class="nombre">${c.nombre} ${c.apellido}</div>
+              <div class="telefono">${c.telefono}</div>
+            </div>
+            <button type="button" class="btn-editar" data-editar-cliente="${c.id}">Editar</button>
+          </div>
           ${
             c.polizas && c.polizas.length
               ? c.polizas.map((p) => `
                 <div class="poliza-badge">
                   <span class="estado-pill estado-${p.estado}">${p.estado}</span>
                   <span>${p.ramos.nombre}${p.detalle_ramo ? ` (${p.detalle_ramo})` : ''} — ${p.numero_poliza}</span>
-                  <select data-poliza-id="${p.id}">
-                    ${ESTADOS_POLIZA.map(e => `<option value="${e}" ${e === p.estado ? 'selected' : ''}>${e}</option>`).join('')}
-                  </select>
+                  <div class="acciones-poliza">
+                    <select data-poliza-id="${p.id}">
+                      ${ESTADOS_POLIZA.map(e => `<option value="${e}" ${e === p.estado ? 'selected' : ''}>${e}</option>`).join('')}
+                    </select>
+                    ${p.cantidad_cuotas > 1 ? `<button type="button" class="btn-editar" data-ver-cuotas="${p.id}">Cuotas</button>` : ''}
+                    <button type="button" class="btn-editar" data-editar-poliza="${p.id}">Editar</button>
+                  </div>
                 </div>
+                <div class="cuotas-panel" id="cuotas-panel-${p.id}" style="display:none;"></div>
               `).join('')
               : '<p class="sin-polizas">Sin pólizas cargadas</p>'
           }
@@ -383,29 +447,103 @@
           pill.textContent = nuevoEstado;
         });
       });
+
+      cont.querySelectorAll('[data-editar-cliente]').forEach((btn) => {
+        btn.addEventListener('click', () => iniciarEdicionCliente(btn.dataset.editarCliente));
+      });
+      cont.querySelectorAll('[data-editar-poliza]').forEach((btn) => {
+        btn.addEventListener('click', () => iniciarEdicionPoliza(btn.dataset.editarPoliza));
+      });
+      cont.querySelectorAll('[data-ver-cuotas]').forEach((btn) => {
+        btn.addEventListener('click', () => toggleCuotas(btn.dataset.verCuotas, btn));
+      });
+    }
+
+    document.getElementById('clientes-buscar').addEventListener('input', (e) => {
+      const q = e.target.value.trim().toLowerCase();
+      if (!q) { renderClientes(ultimosClientes); return; }
+      const filtrados = ultimosClientes.filter((c) =>
+        `${c.nombre} ${c.apellido} ${c.telefono}`.toLowerCase().includes(q)
+      );
+      renderClientes(filtrados);
+    });
+
+    // ---------- Ver / marcar pagadas las cuotas de una póliza ----------
+    async function toggleCuotas(polizaId, btn) {
+      const panel = document.getElementById(`cuotas-panel-${polizaId}`);
+      if (panel.style.display === 'block') {
+        panel.style.display = 'none';
+        return;
+      }
+      panel.style.display = 'block';
+      panel.innerHTML = 'Cargando cuotas...';
+
+      const { data, error } = await supabase
+        .from('cuotas')
+        .select('id, numero_cuota, fecha_vencimiento_cuota, monto, estado')
+        .eq('poliza_id', polizaId)
+        .order('numero_cuota');
+
+      if (error) {
+        panel.innerHTML = `Error: ${error.message}`;
+        return;
+      }
+
+      panel.innerHTML = data.map((cu) => `
+        <div class="cuota-fila">
+          <span class="n">Cuota ${cu.numero_cuota}</span>
+          <span class="fecha">${new Date(cu.fecha_vencimiento_cuota + 'T12:00:00-03:00').toLocaleDateString('es-AR')}${cu.monto ? ` · $${Number(cu.monto).toLocaleString('es-AR')}` : ''}</span>
+          <button type="button" class="btn-pagar" data-cuota-id="${cu.id}" ${cu.estado === 'pagada' ? 'disabled' : ''}>
+            ${cu.estado === 'pagada' ? 'Pagada ✓' : 'Marcar pagada'}
+          </button>
+        </div>
+      `).join('');
+
+      panel.querySelectorAll('[data-cuota-id]').forEach((b) => {
+        b.addEventListener('click', async () => {
+          const id = b.dataset.cuotaId;
+          const { error } = await supabase.from('cuotas').update({ estado: 'pagada', fecha_pago: new Date().toISOString().slice(0, 10) }).eq('id', id);
+          if (error) {
+            alert('Error al marcar como pagada: ' + error.message);
+            return;
+          }
+          b.disabled = true;
+          b.textContent = 'Pagada ✓';
+        });
+      });
     }
 
     // ---------- Cargar selects (cliente/ramo/aseguradora/productor) ----------
-    async function cargarSelects() {
+    async function cargarClienteSelect() {
       const clienteSelect = document.getElementById('p-cliente');
       const { data: clientes } = await supabase.from('clientes').select('id,nombre,apellido').order('nombre');
       clienteSelect.innerHTML = '<option value="">Elegí un cliente</option>' +
         (clientes || []).map(c => `<option value="${c.id}">${c.nombre} ${c.apellido}</option>`).join('');
+    }
 
+    async function cargarRamoSelect() {
       const ramoSelect = document.getElementById('p-ramo');
       const { data: ramos } = await supabase.from('ramos').select('id,nombre').order('nombre');
       ramoSelect.innerHTML = '<option value="">Elegí un ramo</option>' +
         (ramos || []).map(r => `<option value="${r.id}" data-nombre="${r.nombre}">${r.nombre}</option>`).join('');
+    }
 
+    async function cargarAseguradoraSelect() {
       const aseguradoraSelect = document.getElementById('p-aseguradora');
       const { data: aseguradoras } = await supabase.from('aseguradoras').select('id,nombre').order('nombre');
       aseguradoraSelect.innerHTML = '<option value="">Sin especificar</option>' +
         (aseguradoras || []).map(a => `<option value="${a.id}">${a.nombre}</option>`).join('');
+    }
 
+    async function cargarProductorSelect() {
       const productorSelect = document.getElementById('p-productor');
       const { data: productores } = await supabase.from('productores').select('id,nombre').order('nombre');
       productorSelect.innerHTML = '<option value="">Sin especificar</option>' +
         (productores || []).map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
+    }
+
+    async function cargarSelects() {
+      await Promise.all([cargarClienteSelect(), cargarRamoSelect(), cargarAseguradoraSelect(), cargarProductorSelect()]);
     }
 
     document.getElementById('p-ramo').addEventListener('change', (e) => {
@@ -413,7 +551,74 @@
       document.getElementById('p-detalle-ramo-wrap').style.display = nombre === 'Otros' ? 'block' : 'none';
     });
 
-    // ---------- Nuevo cliente ----------
+    // ---------- Agregar aseguradora/productor sin salir del formulario ----------
+    document.querySelectorAll('[data-toggle-add]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const wrap = document.getElementById(`add-${btn.dataset.toggleAdd}-wrap`);
+        wrap.style.display = wrap.style.display === 'flex' ? 'none' : 'flex';
+      });
+    });
+
+    document.getElementById('add-aseguradora-btn').addEventListener('click', async () => {
+      const input = document.getElementById('add-aseguradora-nombre');
+      const nombre = input.value.trim();
+      if (!nombre) return;
+      const { data, error } = await supabase.from('aseguradoras').insert({ nombre }).select().single();
+      if (error) { alert('Error: ' + error.message); return; }
+      await cargarAseguradoraSelect();
+      document.getElementById('p-aseguradora').value = data.id;
+      input.value = '';
+      document.getElementById('add-aseguradora-wrap').style.display = 'none';
+    });
+
+    document.getElementById('add-productor-btn').addEventListener('click', async () => {
+      const input = document.getElementById('add-productor-nombre');
+      const nombre = input.value.trim();
+      if (!nombre) return;
+      const { data, error } = await supabase.from('productores').insert({ nombre }).select().single();
+      if (error) { alert('Error: ' + error.message); return; }
+      await cargarProductorSelect();
+      document.getElementById('p-productor').value = data.id;
+      input.value = '';
+      document.getElementById('add-productor-wrap').style.display = 'none';
+    });
+
+    // ---------- Nuevo cliente / editar cliente ----------
+    let editingClienteId = null;
+
+    function salirModoEdicionCliente() {
+      editingClienteId = null;
+      document.getElementById('cliente-form-titulo').textContent = 'Cargar cliente';
+      document.getElementById('cliente-editando-banner').style.display = 'none';
+      document.getElementById('cliente-submit-btn').textContent = 'Guardar cliente';
+      document.getElementById('cliente-form').reset();
+    }
+
+    function iniciarEdicionCliente(clienteId) {
+      const cliente = ultimosClientes.find(c => c.id === clienteId);
+      if (!cliente) return;
+
+      editingClienteId = clienteId;
+      document.getElementById('c-nombre').value = cliente.nombre || '';
+      document.getElementById('c-apellido').value = cliente.apellido || '';
+      document.getElementById('c-telefono').value = cliente.telefono || '';
+      document.getElementById('c-email').value = cliente.email || '';
+      document.getElementById('c-dni').value = cliente.dni_cuit || '';
+      document.getElementById('c-origen').value = cliente.origen_lead || 'cartera PAS';
+      document.getElementById('c-notas').value = cliente.notas || '';
+
+      document.getElementById('cliente-form-titulo').textContent = 'Editar cliente';
+      document.getElementById('cliente-editando-banner').style.display = 'flex';
+      document.getElementById('cliente-submit-btn').textContent = 'Guardar cambios';
+
+      document.querySelectorAll('.tab-btn').forEach((b) => b.classList.remove('active'));
+      document.querySelector('[data-tab="cliente"]').classList.add('active');
+      document.querySelectorAll('main section').forEach((s) => s.style.display = 'none');
+      document.getElementById('tab-cliente').style.display = 'block';
+    }
+
+    document.getElementById('cliente-cancelar-edicion').addEventListener('click', salirModoEdicionCliente);
+
     document.getElementById('cliente-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const errorEl = document.getElementById('cliente-error');
@@ -421,7 +626,7 @@
       errorEl.style.display = 'none';
       okEl.style.display = 'none';
 
-      const { error } = await supabase.from('clientes').insert({
+      const datos = {
         nombre: document.getElementById('c-nombre').value.trim(),
         apellido: document.getElementById('c-apellido').value.trim(),
         telefono: document.getElementById('c-telefono').value.trim(),
@@ -429,21 +634,37 @@
         dni_cuit: document.getElementById('c-dni').value.trim() || null,
         origen_lead: document.getElementById('c-origen').value,
         notas: document.getElementById('c-notas').value.trim() || null,
-      });
+      };
+
+      const { error } = editingClienteId
+        ? await supabase.from('clientes').update(datos).eq('id', editingClienteId)
+        : await supabase.from('clientes').insert(datos);
 
       if (error) {
         errorEl.textContent = 'Error: ' + error.message;
         errorEl.style.display = 'block';
         return;
       }
+      okEl.textContent = editingClienteId ? 'Cambios guardados ✓' : 'Cliente guardado ✓';
       okEl.style.display = 'block';
-      e.target.reset();
+      const estabaEditando = !!editingClienteId;
+      salirModoEdicionCliente();
+      if (estabaEditando) cargarClientes();
     });
 
-    // ---------- Nueva póliza ----------
+    // ---------- Nueva póliza / editar póliza ----------
     function datetimeLocalAIso(valor) {
       // input datetime-local no trae huso horario; asumimos hora Argentina (-03:00).
       return valor ? `${valor}:00-03:00` : null;
+    }
+
+    function isoADatetimeLocal(iso) {
+      if (!iso) return '';
+      const partes = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'America/Argentina/Buenos_Aires',
+        year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false,
+      }).formatToParts(new Date(iso)).reduce((acc, p) => { acc[p.type] = p.value; return acc; }, {});
+      return `${partes.year}-${partes.month}-${partes.day}T${partes.hour}:${partes.minute}`;
     }
 
     // Cantidad de cuotas = meses reales de vigencia / meses por cuota según
@@ -493,6 +714,57 @@
       document.getElementById(id).addEventListener('input', actualizarPreviewCuotas);
     });
 
+    let editingPolizaId = null;
+
+    function salirModoEdicionPoliza() {
+      editingPolizaId = null;
+      document.getElementById('poliza-form-titulo').textContent = 'Cargar póliza';
+      document.getElementById('poliza-editando-banner').style.display = 'none';
+      document.getElementById('poliza-submit-btn').textContent = 'Guardar póliza';
+      document.getElementById('poliza-form').reset();
+      document.getElementById('p-detalle-ramo-wrap').style.display = 'none';
+    }
+
+    function buscarPolizaPorId(polizaId) {
+      for (const c of ultimosClientes) {
+        const p = (c.polizas || []).find(p => p.id === polizaId);
+        if (p) return p;
+      }
+      return null;
+    }
+
+    async function iniciarEdicionPoliza(polizaId) {
+      const poliza = buscarPolizaPorId(polizaId);
+      if (!poliza) return;
+
+      await cargarSelects(); // asegura que las opciones existan antes de setear valores
+
+      editingPolizaId = polizaId;
+      document.getElementById('p-cliente').value = poliza.cliente_id || '';
+      document.getElementById('p-ramo').value = poliza.ramo_id;
+      document.getElementById('p-ramo').dispatchEvent(new Event('change'));
+      document.getElementById('p-detalle-ramo').value = poliza.detalle_ramo || '';
+      document.getElementById('p-aseguradora').value = poliza.aseguradora_id || '';
+      document.getElementById('p-productor').value = poliza.productor_id || '';
+      document.getElementById('p-numero').value = poliza.numero_poliza || '';
+      document.getElementById('p-inicio').value = isoADatetimeLocal(poliza.fecha_inicio_vigencia);
+      document.getElementById('p-vencimiento').value = isoADatetimeLocal(poliza.fecha_vencimiento);
+      document.getElementById('p-prima').value = poliza.prima || '';
+      document.getElementById('p-forma-pago').value = poliza.forma_pago || 'mensual';
+      actualizarPreviewCuotas();
+
+      document.getElementById('poliza-form-titulo').textContent = 'Editar póliza';
+      document.getElementById('poliza-editando-banner').style.display = 'flex';
+      document.getElementById('poliza-submit-btn').textContent = 'Guardar cambios';
+
+      document.querySelectorAll('.tab-btn').forEach((b) => b.classList.remove('active'));
+      document.querySelector('[data-tab="poliza"]').classList.add('active');
+      document.querySelectorAll('main section').forEach((s) => s.style.display = 'none');
+      document.getElementById('tab-poliza').style.display = 'block';
+    }
+
+    document.getElementById('poliza-cancelar-edicion').addEventListener('click', salirModoEdicionPoliza);
+
     document.getElementById('poliza-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const errorEl = document.getElementById('poliza-error');
@@ -503,7 +775,7 @@
       const ramoSelect = document.getElementById('p-ramo');
       const esOtros = ramoSelect.selectedOptions[0]?.dataset.nombre === 'Otros';
 
-      const { error } = await supabase.from('polizas').insert({
+      const datos = {
         cliente_id: document.getElementById('p-cliente').value,
         ramo_id: ramoSelect.value,
         detalle_ramo: esOtros ? (document.getElementById('p-detalle-ramo').value.trim() || null) : null,
@@ -515,17 +787,25 @@
         prima: document.getElementById('p-prima').value || null,
         cantidad_cuotas: calcularCantidadCuotas() || 1,
         forma_pago: document.getElementById('p-forma-pago').value,
-        estado: 'activa',
-      });
+      };
+      if (!editingPolizaId) datos.estado = 'activa'; // al editar, el estado se maneja desde "Clientes"
+
+      const { error } = editingPolizaId
+        ? await supabase.from('polizas').update(datos).eq('id', editingPolizaId)
+        : await supabase.from('polizas').insert(datos);
 
       if (error) {
         errorEl.textContent = 'Error: ' + error.message;
         errorEl.style.display = 'block';
         return;
       }
+      okEl.textContent = editingPolizaId
+        ? 'Cambios guardados ✓'
+        : 'Póliza guardada — las cuotas (si corresponde) se generaron solas ✓';
       okEl.style.display = 'block';
-      e.target.reset();
-      document.getElementById('p-detalle-ramo-wrap').style.display = 'none';
+      const estabaEditando = !!editingPolizaId;
+      salirModoEdicionPoliza();
+      if (estabaEditando) cargarClientes();
     });
 
     // ---------- Alertas de hoy ----------
