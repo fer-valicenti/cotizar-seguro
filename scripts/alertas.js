@@ -13,13 +13,17 @@ const supabase = createClient(
 const DIAS_ANTICIPACION = [15, 5];
 
 const PLANTILLAS = {
+  // Fin de la COBERTURA (la póliza deja de estar vigente) — distinto de una
+  // cuota, que es solo un pago dentro de una póliza que sigue activa.
   vencimiento_poliza: (nombre, ramo, fecha, dias) =>
     `Hola ${nombre}! 👋 Te escribo de tu Productor de Seguros para avisarte que ` +
-    `tu póliza de *${ramo}* vence el *${fecha}* (en ${dias} días). ` +
+    `tu cobertura de *${ramo}* finaliza el *${fecha}* (en ${dias} días). ` +
     `Cualquier consulta, quedo atento 🙌`,
+  // Vencimiento de un PAGO puntual — la póliza sigue vigente, es solo cobranza.
   vencimiento_cuota: (nombre, ramo, fecha, dias) =>
-    `Hola ${nombre}! 👋 Te recuerdo que la cuota de tu póliza de *${ramo}* ` +
-    `vence el *${fecha}* (en ${dias} días). Cualquier consulta sobre el pago, avisame por acá 🙌`,
+    `Hola ${nombre}! 👋 Te recuerdo que el *${fecha}* (en ${dias} días) vence el pago de una ` +
+    `cuota de tu póliza de *${ramo}*. Tu cobertura sigue vigente, es solo un recordatorio de ` +
+    `pago. Cualquier consulta, avisame 🙌`,
 };
 
 function generarLinkWhatsapp(telefono, mensaje) {
@@ -127,7 +131,7 @@ async function detectarVencimientosCuotas() {
 
     const { data: cuotas, error } = await supabase
       .from('cuotas')
-      .select('id, poliza_id, fecha_vencimiento_cuota, monto, polizas(numero_poliza, cliente_id, clientes(nombre, telefono), ramos(nombre))')
+      .select('id, poliza_id, fecha_vencimiento_cuota, polizas(numero_poliza, cliente_id, clientes(nombre, telefono), ramos(nombre))')
       .eq('estado', 'pendiente')
       .eq('fecha_vencimiento_cuota', fechaObjetivoStr);
 
