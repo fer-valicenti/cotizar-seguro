@@ -13,9 +13,8 @@ CRM minimalista + alertas de vencimiento por WhatsApp para PAS.
 
 1. En el dashboard de Supabase, andá a **SQL Editor** > **New query**.
 2. Pegá el contenido de [`db/schema.sql`](db/schema.sql) completo.
-3. Click en **Run**. Deberías ver las tablas `clientes`, `polizas`, `cuotas`, `interacciones`, `alertas`, `ramos`, `aseguradoras` en **Table Editor**.
-
-> Si ya tenías esta base creada antes de que `fecha_inicio_vigencia`/`fecha_vencimiento` pasaran a incluir la hora exacta, corré también [`db/migracion_vigencia_con_hora.sql`](db/migracion_vigencia_con_hora.sql) una sola vez.
+3. Click en **Run**. Deberías ver las tablas `clientes`, `polizas`, `cuotas`, `interacciones`, `alertas`, `ramos`, `aseguradoras`, `productores` en **Table Editor**. Esto ya incluye la generación automática de cuotas: si cargás una póliza con `cantidad_cuotas` mayor a 1, el sistema arma solo cada cuota (mismo día del mes que la fecha de inicio de vigencia).
+4. (Opcional pero recomendado) Pegá y corré también [`db/vista_alertas.sql`](db/vista_alertas.sql) — crea una vista de lectura fácil (`vista_alertas`) que junta cliente, póliza y ramo en una sola tabla, para no tener que ir saltando entre pantallas al revisar qué avisar cada día.
 
 ## Paso 3 — Obtener credenciales
 
@@ -31,7 +30,7 @@ CRM minimalista + alertas de vencimiento por WhatsApp para PAS.
 npm install
 ```
 
-Cargá 2-3 clientes y pólizas de prueba desde **Table Editor** en Supabase (con `fecha_vencimiento` a 15/5 días desde hoy para poder probar). Ojo: `fecha_inicio_vigencia` y `fecha_vencimiento` son fecha **y hora** (Supabase te muestra un selector de fecha+hora al cargar la fila) — la convención habitual es 12:00hs.
+Cargá 2-3 clientes y pólizas de prueba desde **Table Editor** en Supabase (con `fecha_vencimiento` a 15/5 días desde hoy para poder probar). Ojo: `fecha_inicio_vigencia` y `fecha_vencimiento` son fecha **y hora** (Supabase te muestra un selector de fecha+hora al cargar la fila) — la convención habitual es 12:00hs. También podés correr `node scripts/seed_test_data.mjs` para cargar 3 clientes/pólizas de prueba automáticamente (**acordate de borrarlos** antes de usar el sistema con datos reales).
 
 ```bash
 npm run alertas
@@ -57,11 +56,19 @@ Deberías ver en consola las alertas generadas, y en la tabla `alertas` de Supab
 
 El workflow ya está armado en [`.github/workflows/alertas.yml`](.github/workflows/alertas.yml): corre todos los días a las 8am (hora Argentina) sin depender de que tengas la PC prendida.
 
-1. Creá un repositorio en GitHub (puede ser privado) y subí este proyecto (`git init`, `git add`, `git commit`, `git remote add origin ...`, `git push`). **El archivo `.env` nunca se sube** (ya está en `.gitignore`).
+1. Creá un repositorio en GitHub (público — GitHub Pages, para publicar la landing en el Paso 8, no funciona en repos privados con el plan gratuito) y subí este proyecto (`git init`, `git add`, `git commit`, `git remote add origin ...`, `git push`). **El archivo `.env` nunca se sube** (ya está en `.gitignore`). No hay ningún dato sensible en el código: la única key que queda visible es la `anon`, diseñada para ser pública.
 2. En el repo de GitHub: **Settings → Secrets and variables → Actions → New repository secret**, y cargá dos secrets con los mismos valores que tenés en tu `.env`:
    - `SUPABASE_URL`
    - `SUPABASE_SERVICE_ROLE_KEY`
 3. Listo — se ejecuta solo todos los días. También podés dispararlo a mano desde la pestaña **Actions** del repo (botón "Run workflow").
+
+## Paso 8 — Publicar la landing (GitHub Pages)
+
+El workflow [`.github/workflows/deploy-landing.yml`](.github/workflows/deploy-landing.yml) publica automáticamente la carpeta `landing/` cada vez que cambia.
+
+1. En el repo de GitHub: **Settings → Pages → Build and deployment → Source**, elegí **"GitHub Actions"**.
+2. Empujá cualquier cambio en `landing/` (o disparalo a mano desde **Actions** → "Publicar landing en GitHub Pages" → **Run workflow**).
+3. Tu landing queda pública en `https://TU-USUARIO.github.io/TU-REPO/`.
 
 ## Próximos pasos
 
