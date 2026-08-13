@@ -214,6 +214,8 @@
               <div><label for="c-email">Email (opcional)</label><input type="email" id="c-email"></div>
               <div><label for="c-dni">DNI/CUIT (opcional)</label><input type="text" id="c-dni"></div>
             </div>
+            <label for="c-nacimiento">Fecha de nacimiento (opcional)</label>
+            <input type="date" id="c-nacimiento">
             <label for="c-origen">Origen</label>
             <select id="c-origen">
               <option value="cartera PAS">Cartera PAS</option>
@@ -233,6 +235,9 @@
           <h2 id="poliza-form-titulo">Cargar póliza</h2>
           <div class="banner-edicion" id="poliza-editando-banner" style="display:none;">
             Editando póliza existente. <button type="button" id="poliza-cancelar-edicion">Cancelar</button>
+          </div>
+          <div class="banner-edicion" id="poliza-renovando-banner" style="display:none;">
+            Renovando póliza — al guardar, la anterior pasa sola a "Renovada". <button type="button" id="poliza-cancelar-renovacion">Cancelar</button>
           </div>
           <form id="poliza-form">
             <label for="p-cliente">Cliente</label>
@@ -395,7 +400,7 @@
       const { data, error } = await supabase
         .from('clientes')
         .select(`
-          id, nombre, apellido, telefono, email, dni_cuit, origen_lead, notas,
+          id, nombre, apellido, telefono, email, dni_cuit, fecha_nacimiento, origen_lead, notas,
           polizas(id, numero_poliza, estado, detalle_ramo, ramo_id, aseguradora_id, productor_id,
                    fecha_inicio_vigencia, fecha_vencimiento, prima, forma_pago, cantidad_cuotas,
                    ramos(nombre))
@@ -440,6 +445,7 @@
                       ${ESTADOS_POLIZA.map(e => `<option value="${e}" ${e === p.estado ? 'selected' : ''}>${ESTADO_POLIZA_LABEL[e]}</option>`).join('')}
                     </select>
                     ${p.cantidad_cuotas > 1 ? `<button type="button" class="btn-editar" data-ver-cuotas="${p.id}">Cuotas</button>` : ''}
+                    ${p.estado === 'activa' || p.estado === 'vencida' ? `<button type="button" class="btn-editar" data-renovar-poliza="${p.id}">Renovar</button>` : ''}
                     <button type="button" class="btn-editar" data-editar-poliza="${p.id}">Editar</button>
                   </div>
                 </div>
@@ -471,6 +477,9 @@
       });
       cont.querySelectorAll('[data-editar-poliza]').forEach((btn) => {
         btn.addEventListener('click', () => iniciarEdicionPoliza(btn.dataset.editarPoliza));
+      });
+      cont.querySelectorAll('[data-renovar-poliza]').forEach((btn) => {
+        btn.addEventListener('click', () => iniciarRenovacionPoliza(btn.dataset.renovarPoliza));
       });
       cont.querySelectorAll('[data-ver-cuotas]').forEach((btn) => {
         btn.addEventListener('click', () => toggleCuotas(btn.dataset.verCuotas, btn));
@@ -693,6 +702,7 @@
       document.getElementById('c-telefono').value = cliente.telefono || '';
       document.getElementById('c-email').value = cliente.email || '';
       document.getElementById('c-dni').value = cliente.dni_cuit || '';
+      document.getElementById('c-nacimiento').value = cliente.fecha_nacimiento || '';
       document.getElementById('c-origen').value = cliente.origen_lead || 'cartera PAS';
       document.getElementById('c-notas').value = cliente.notas || '';
 
@@ -721,6 +731,7 @@
         telefono: document.getElementById('c-telefono').value.trim(),
         email: document.getElementById('c-email').value.trim() || null,
         dni_cuit: document.getElementById('c-dni').value.trim() || null,
+        fecha_nacimiento: document.getElementById('c-nacimiento').value || null,
         origen_lead: document.getElementById('c-origen').value,
         notas: document.getElementById('c-notas').value.trim() || null,
       };
@@ -821,11 +832,14 @@
     });
 
     let editingPolizaId = null;
+    let renovandoDesdePolizaId = null;
 
     function salirModoEdicionPoliza() {
       editingPolizaId = null;
+      renovandoDesdePolizaId = null;
       document.getElementById('poliza-form-titulo').textContent = 'Cargar póliza';
       document.getElementById('poliza-editando-banner').style.display = 'none';
+      document.getElementById('poliza-renovando-banner').style.display = 'none';
       document.getElementById('poliza-submit-btn').textContent = 'Guardar póliza';
       document.getElementById('poliza-form').reset();
       document.getElementById('p-detalle-ramo-wrap').style.display = 'none';
@@ -838,6 +852,46 @@
       }
       return null;
     }
+
+    async function iniciarRenovacionPoliza(polizaId) {
+      const poliza = buscarPolizaPorId(polizaId);
+      if (!poliza) return;
+
+      await cargarSelects();
+      salirModoEdicionPoliza(); // arranca de un formulario limpio
+
+      renovandoDesdePolizaId = polizaId;
+      document.getElementById('p-cliente').value = poliza.cliente_id || '';
+      document.getElementById('p-ramo').value = poliza.ramo_id;
+      document.getElementById('p-ramo').dispatchEvent(new Event('change'));
+      document.getElementById('p-detalle-ramo').value = poliza.detalle_ramo || '';
+      document.getElementById('p-aseguradora').value = poliza.aseguradora_id || '';
+      document.getElementById('p-productor').value = poliza.productor_id || '';
+      document.getElementById('p-numero').value = ''; // la nueva póliza suele tener número propio
+      document.getElementById('p-prima').value = poliza.prima || '';
+      document.getElementById('p-forma-pago').value = poliza.forma_pago || 'mensual';
+
+      // La nueva vigencia arranca donde terminaba la anterior, y dura lo mismo.
+      const inicioAnterior = new Date(poliza.fecha_inicio_vigencia);
+      const vencimientoAnterior = new Date(poliza.fecha_vencimiento);
+      const duracionMs = vencimientoAnterior - inicioAnterior;
+      const nuevoInicio = vencimientoAnterior;
+      const nuevoVencimiento = new Date(vencimientoAnterior.getTime() + duracionMs);
+      document.getElementById('p-inicio').value = isoADatetimeLocal(nuevoInicio.toISOString());
+      document.getElementById('p-vencimiento').value = isoADatetimeLocal(nuevoVencimiento.toISOString());
+      actualizarPreviewCuotas();
+
+      document.getElementById('poliza-form-titulo').textContent = 'Renovar póliza';
+      document.getElementById('poliza-renovando-banner').style.display = 'flex';
+      document.getElementById('poliza-submit-btn').textContent = 'Guardar renovación';
+
+      document.querySelectorAll('.tab-btn').forEach((b) => b.classList.remove('active'));
+      document.querySelector('[data-tab="poliza"]').classList.add('active');
+      document.querySelectorAll('main section').forEach((s) => s.style.display = 'none');
+      document.getElementById('tab-poliza').style.display = 'block';
+    }
+
+    document.getElementById('poliza-cancelar-renovacion').addEventListener('click', salirModoEdicionPoliza);
 
     async function iniciarEdicionPoliza(polizaId) {
       const poliza = buscarPolizaPorId(polizaId);
@@ -896,6 +950,22 @@
       };
       if (!editingPolizaId) datos.estado = 'activa'; // al editar, el estado se maneja desde "Clientes"
 
+      // Avisar si el número de póliza ya existe (en otra póliza), tanto al
+      // crear como al editar.
+      const { data: existentes } = await supabase
+        .from('polizas')
+        .select('id, numero_poliza')
+        .eq('numero_poliza', datos.numero_poliza)
+        .neq('id', editingPolizaId || '00000000-0000-0000-0000-000000000000');
+
+      if (existentes && existentes.length) {
+        const seguir = confirm(
+          `Ya existe otra póliza con el número "${datos.numero_poliza}".\n\n` +
+          `Aceptar = guardar igual.\nCancelar = corregir el número.`
+        );
+        if (!seguir) return;
+      }
+
       const { error } = editingPolizaId
         ? await supabase.from('polizas').update(datos).eq('id', editingPolizaId)
         : await supabase.from('polizas').insert(datos);
@@ -905,13 +975,21 @@
         errorEl.style.display = 'block';
         return;
       }
-      okEl.textContent = editingPolizaId
-        ? 'Cambios guardados ✓'
-        : 'Póliza guardada — las cuotas (si corresponde) se generaron solas ✓';
+
+      if (renovandoDesdePolizaId) {
+        const { error: errorRenovada } = await supabase.from('polizas').update({ estado: 'renovada' }).eq('id', renovandoDesdePolizaId);
+        if (errorRenovada) console.error('No se pudo marcar la póliza anterior como renovada:', errorRenovada.message);
+      }
+
+      okEl.textContent = renovandoDesdePolizaId
+        ? 'Renovación guardada — la póliza anterior pasó a "Renovada" ✓'
+        : editingPolizaId
+          ? 'Cambios guardados ✓'
+          : 'Póliza guardada — las cuotas (si corresponde) se generaron solas ✓';
       okEl.style.display = 'block';
-      const estabaEditando = !!editingPolizaId;
+      const estabaEditandoOrenovando = !!editingPolizaId || !!renovandoDesdePolizaId;
       salirModoEdicionPoliza();
-      if (estabaEditando) cargarClientes();
+      if (estabaEditandoOrenovando) cargarClientes();
     });
 
     // ---------- Alertas de hoy ----------
