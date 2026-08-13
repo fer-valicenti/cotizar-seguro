@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel — Cotizá tu seguro</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛡️</text></svg>">
+<style>
+  :root {
+    --color-primary: #0F3D5F;
+    --color-primary-light: #1B5A85;
+    --color-accent: #25D366;
+    --color-bg: #F4F7FA;
+    --color-card: #FFFFFF;
+    --color-text: #14202B;
+    --color-muted: #5B6B78;
+    --color-border: #E1E7ED;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--color-bg);
+    color: var(--color-text);
+    margin: 0;
+  }
+  .center-screen {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+  .card {
+    background: var(--color-card);
+    max-width: 400px;
+    width: 100%;
+    padding: 32px 24px;
+    border-radius: var(--radius);
+    box-shadow: 0 4px 20px rgba(15,61,95,0.08);
+  }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  h2 { font-size: 16px; margin: 0 0 16px; }
+  p.sub { color: var(--color-muted); font-size: 13px; margin-top: 0; }
+  label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 6px; margin-top: 14px; }
+  input, select {
+    width: 100%;
+    padding: 11px 12px;
+    border: 1.5px solid var(--color-border);
+    border-radius: 8px;
+    font-size: 14px;
+    background: #fff;
+    color: var(--color-text);
+    font-family: inherit;
+  }
+  input:focus, select:focus { outline: none; border-color: var(--color-primary-light); }
+  button {
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  button.primary { background: var(--color-primary); color: #fff; width: 100%; margin-top: 18px; }
+  button.primary:disabled { opacity: 0.6; cursor: not-allowed; }
+  button.link { background: none; color: var(--color-primary); text-decoration: underline; padding: 4px; }
+  .error { color: #c0392b; font-size: 13px; margin-top: 10px; display: none; }
+  .ok { color: #1a7f37; font-size: 13px; margin-top: 10px; display: none; }
+
+  header {
+    background: var(--color-primary);
+    color: #fff;
+    padding: 14px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  header h1 { color: #fff; font-size: 16px; margin: 0; }
+  .tabs {
+    display: flex;
+    gap: 6px;
+    padding: 12px 20px 0;
+    max-width: 700px;
+    margin: 0 auto;
+  }
+  .tab-btn {
+    background: #fff;
+    border: 1.5px solid var(--color-border);
+    color: var(--color-muted);
+    padding: 9px 14px;
+    border-radius: 8px 8px 0 0;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .tab-btn.active { background: var(--color-card); color: var(--color-primary); border-bottom-color: var(--color-card); }
+  main { max-width: 700px; margin: 0 auto; padding: 0 20px 40px; }
+  .panel-card { background: var(--color-card); border-radius: 0 var(--radius) var(--radius) var(--radius); padding: 24px; box-shadow: 0 4px 20px rgba(15,61,95,0.06); }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .alerta-item { border: 1.5px solid var(--color-border); border-radius: 10px; padding: 14px; margin-bottom: 10px; }
+  .alerta-item.enviada { opacity: 0.5; }
+  .alerta-item .nombre { font-weight: 700; font-size: 14px; }
+  .alerta-item .meta { color: var(--color-muted); font-size: 12.5px; margin: 4px 0 10px; }
+  .alerta-item .acciones { display: flex; gap: 8px; }
+  .btn-wsp { background: var(--color-accent); color: #fff; text-decoration: none; padding: 8px 12px; border-radius: 7px; font-size: 12.5px; font-weight: 700; }
+  .btn-marcar { background: var(--color-bg); color: var(--color-text); border: 1.5px solid var(--color-border); font-size: 12.5px; padding: 8px 12px; border-radius: 7px; }
+  .empty-msg { color: var(--color-muted); font-size: 13.5px; text-align: center; padding: 24px 0; }
+</style>
+</head>
+<body>
+
+  <div id="login-screen" class="center-screen">
+    <div class="card">
+      <h1>Panel interno</h1>
+      <p class="sub">Iniciá sesión para cargar clientes y pólizas.</p>
+      <form id="login-form">
+        <label for="login-email">Email</label>
+        <input type="email" id="login-email" required>
+        <label for="login-password">Contraseña</label>
+        <input type="password" id="login-password" required>
+        <button type="submit" class="primary" id="login-btn">Ingresar</button>
+        <div class="error" id="login-error"></div>
+      </form>
+    </div>
+  </div>
+
+  <div id="panel-screen" style="display:none;">
+    <header>
+      <h1>Panel — Cotizá tu seguro</h1>
+      <button class="link" id="logout-btn" style="color:#fff;">Cerrar sesión</button>
+    </header>
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="alertas">Alertas de hoy</button>
+      <button class="tab-btn" data-tab="cliente">Nuevo cliente</button>
+      <button class="tab-btn" data-tab="poliza">Nueva póliza</button>
+    </div>
+    <main>
+      <div class="panel-card">
+
+        <section id="tab-alertas">
+          <h2>Alertas pendientes</h2>
+          <div id="alertas-lista"><p class="empty-msg">Cargando...</p></div>
+        </section>
+
+        <section id="tab-cliente" style="display:none;">
+          <h2>Cargar cliente</h2>
+          <form id="cliente-form">
+            <div class="row2">
+              <div><label for="c-nombre">Nombre</label><input type="text" id="c-nombre" required></div>
+              <div><label for="c-apellido">Apellido</label><input type="text" id="c-apellido" required></div>
+            </div>
+            <label for="c-telefono">WhatsApp (con código de país, sin +)</label>
+            <input type="tel" id="c-telefono" placeholder="Ej: 5491122334455" required>
+            <div class="row2">
+              <div><label for="c-email">Email (opcional)</label><input type="email" id="c-email"></div>
+              <div><label for="c-dni">DNI/CUIT (opcional)</label><input type="text" id="c-dni"></div>
+            </div>
+            <label for="c-origen">Origen</label>
+            <select id="c-origen">
+              <option value="cartera PAS">Cartera PAS</option>
+              <option value="referido">Referido</option>
+              <option value="landing">Landing</option>
+              <option value="otro">Otro</option>
+            </select>
+            <label for="c-notas">Notas (opcional)</label>
+            <input type="text" id="c-notas">
+            <button type="submit" class="primary">Guardar cliente</button>
+            <div class="error" id="cliente-error"></div>
+            <div class="ok" id="cliente-ok">Cliente guardado ✓</div>
+          </form>
+        </section>
+
+        <section id="tab-poliza" style="display:none;">
+          <h2>Cargar póliza</h2>
+          <form id="poliza-form">
+            <label for="p-cliente">Cliente</label>
+            <select id="p-cliente" required><option value="">Cargando...</option></select>
+
+            <div class="row2">
+              <div>
+                <label for="p-ramo">Ramo</label>
+                <select id="p-ramo" required><option value="">Cargando...</option></select>
+              </div>
+              <div>
+                <label for="p-numero">Número de póliza</label>
+                <input type="text" id="p-numero" required>
+              </div>
+            </div>
+
+            <div id="p-detalle-ramo-wrap" style="display:none;">
+              <label for="p-detalle-ramo">¿Qué es exactamente? (ramo "Otros")</label>
+              <input type="text" id="p-detalle-ramo" placeholder="Ej: seguro de viajero">
+            </div>
+
+            <div class="row2">
+              <div>
+                <label for="p-aseguradora">Aseguradora (opcional)</label>
+                <select id="p-aseguradora"><option value="">Sin especificar</option></select>
+              </div>
+              <div>
+                <label for="p-productor">Productor (opcional)</label>
+                <select id="p-productor"><option value="">Sin especificar</option></select>
+              </div>
+            </div>
+
+            <div class="row2">
+              <div>
+                <label for="p-inicio">Inicio de vigencia</label>
+                <input type="datetime-local" id="p-inicio" required>
+              </div>
+              <div>
+                <label for="p-vencimiento">Vencimiento</label>
+                <input type="datetime-local" id="p-vencimiento" required>
+              </div>
+            </div>
+
+            <div class="row2">
+              <div>
+                <label for="p-prima">Prima total ($)</label>
+                <input type="number" id="p-prima" step="0.01">
+              </div>
+              <div>
+                <label for="p-cuotas">Cantidad de cuotas</label>
+                <input type="number" id="p-cuotas" value="1" min="1">
+              </div>
+            </div>
+
+            <label for="p-forma-pago">Forma de pago</label>
+            <select id="p-forma-pago">
+              <option value="mensual">Mensual</option>
+              <option value="trimestral">Trimestral</option>
+              <option value="semestral">Semestral</option>
+              <option value="anual">Anual</option>
+              <option value="contado">Contado</option>
+            </select>
+
+            <button type="submit" class="primary">Guardar póliza</button>
+            <div class="error" id="poliza-error"></div>
+            <div class="ok" id="poliza-ok">Póliza guardada — las cuotas (si corresponde) se generaron solas ✓</div>
+          </form>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+    const SUPABASE_URL = 'https://gnanlhiuygpepewgksnp.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImduYW5saGl1eWdwZXBld2drc25wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY1Njc0MjksImV4cCI6MjEwMjE0MzQyOX0.JSv3FC8jliDV_ZdDL_CkCXoBXbeSg0KzeABSJ9kG2FU';
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const loginScreen = document.getElementById('login-screen');
+    const panelScreen = document.getElementById('panel-screen');
+    const loginForm = document.getElementById('login-form');
+    const loginError = document.getElementById('login-error');
+    const loginBtn = document.getElementById('login-btn');
+
+    async function mostrarSegunSesion() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        loginScreen.style.display = 'none';
+        panelScreen.style.display = 'block';
+        cargarSelects();
+        cargarAlertas();
+      } else {
+        loginScreen.style.display = 'flex';
+        panelScreen.style.display = 'none';
+      }
+    }
+
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      loginError.style.display = 'none';
+      loginBtn.disabled = true;
+      loginBtn.textContent = 'Ingresando...';
+
+      const email = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value;
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+
+      loginBtn.disabled = false;
+      loginBtn.textContent = 'Ingresar';
+
+      if (error) {
+        loginError.textContent = 'Email o contraseña incorrectos.';
+        loginError.style.display = 'block';
+        return;
+      }
+      mostrarSegunSesion();
+    });
+
+    document.getElementById('logout-btn').addEventListener('click', async () => {
+      await supabase.auth.signOut();
+      mostrarSegunSesion();
+    });
+
+    // ---------- Tabs ----------
+    document.querySelectorAll('.tab-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.querySelectorAll('main section').forEach((s) => s.style.display = 'none');
+        document.getElementById(`tab-${btn.dataset.tab}`).style.display = 'block';
+        if (btn.dataset.tab === 'alertas') cargarAlertas();
+        if (btn.dataset.tab === 'poliza') cargarSelects();
+      });
+    });
+
+    // ---------- Cargar selects (cliente/ramo/aseguradora/productor) ----------
+    async function cargarSelects() {
+      const clienteSelect = document.getElementById('p-cliente');
+      const { data: clientes } = await supabase.from('clientes').select('id,nombre,apellido').order('nombre');
+      clienteSelect.innerHTML = '<option value="">Elegí un cliente</option>' +
+        (clientes || []).map(c => `<option value="${c.id}">${c.nombre} ${c.apellido}</option>`).join('');
+
+      const ramoSelect = document.getElementById('p-ramo');
+      const { data: ramos } = await supabase.from('ramos').select('id,nombre').order('nombre');
+      ramoSelect.innerHTML = '<option value="">Elegí un ramo</option>' +
+        (ramos || []).map(r => `<option value="${r.id}" data-nombre="${r.nombre}">${r.nombre}</option>`).join('');
+
+      const aseguradoraSelect = document.getElementById('p-aseguradora');
+      const { data: aseguradoras } = await supabase.from('aseguradoras').select('id,nombre').order('nombre');
+      aseguradoraSelect.innerHTML = '<option value="">Sin especificar</option>' +
+        (aseguradoras || []).map(a => `<option value="${a.id}">${a.nombre}</option>`).join('');
+
+      const productorSelect = document.getElementById('p-productor');
+      const { data: productores } = await supabase.from('productores').select('id,nombre').order('nombre');
+      productorSelect.innerHTML = '<option value="">Sin especificar</option>' +
+        (productores || []).map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
+    }
+
+    document.getElementById('p-ramo').addEventListener('change', (e) => {
+      const nombre = e.target.selectedOptions[0]?.dataset.nombre;
+      document.getElementById('p-detalle-ramo-wrap').style.display = nombre === 'Otros' ? 'block' : 'none';
+    });
+
+    // ---------- Nuevo cliente ----------
+    document.getElementById('cliente-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const errorEl = document.getElementById('cliente-error');
+      const okEl = document.getElementById('cliente-ok');
+      errorEl.style.display = 'none';
+      okEl.style.display = 'none';
+
+      const { error } = await supabase.from('clientes').insert({
+        nombre: document.getElementById('c-nombre').value.trim(),
+        apellido: document.getElementById('c-apellido').value.trim(),
+        telefono: document.getElementById('c-telefono').value.trim(),
+        email: document.getElementById('c-email').value.trim() || null,
+        dni_cuit: document.getElementById('c-dni').value.trim() || null,
+        origen_lead: document.getElementById('c-origen').value,
+        notas: document.getElementById('c-notas').value.trim() || null,
+      });
+
+      if (error) {
+        errorEl.textContent = 'Error: ' + error.message;
+        errorEl.style.display = 'block';
+        return;
+      }
+      okEl.style.display = 'block';
+      e.target.reset();
+    });
+
+    // ---------- Nueva póliza ----------
+    function datetimeLocalAIso(valor) {
+      // input datetime-local no trae huso horario; asumimos hora Argentina (-03:00).
+      return valor ? `${valor}:00-03:00` : null;
+    }
+
+    document.getElementById('poliza-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const errorEl = document.getElementById('poliza-error');
+      const okEl = document.getElementById('poliza-ok');
+      errorEl.style.display = 'none';
+      okEl.style.display = 'none';
+
+      const ramoSelect = document.getElementById('p-ramo');
+      const esOtros = ramoSelect.selectedOptions[0]?.dataset.nombre === 'Otros';
+
+      const { error } = await supabase.from('polizas').insert({
+        cliente_id: document.getElementById('p-cliente').value,
+        ramo_id: ramoSelect.value,
+        detalle_ramo: esOtros ? (document.getElementById('p-detalle-ramo').value.trim() || null) : null,
+        aseguradora_id: document.getElementById('p-aseguradora').value || null,
+        productor_id: document.getElementById('p-productor').value || null,
+        numero_poliza: document.getElementById('p-numero').value.trim(),
+        fecha_inicio_vigencia: datetimeLocalAIso(document.getElementById('p-inicio').value),
+        fecha_vencimiento: datetimeLocalAIso(document.getElementById('p-vencimiento').value),
+        prima: document.getElementById('p-prima').value || null,
+        cantidad_cuotas: document.getElementById('p-cuotas').value || 1,
+        forma_pago: document.getElementById('p-forma-pago').value,
+        estado: 'activa',
+      });
+
+      if (error) {
+        errorEl.textContent = 'Error: ' + error.message;
+        errorEl.style.display = 'block';
+        return;
+      }
+      okEl.style.display = 'block';
+      e.target.reset();
+      document.getElementById('p-detalle-ramo-wrap').style.display = 'none';
+    });
+
+    // ---------- Alertas de hoy ----------
+    async function cargarAlertas() {
+      const cont = document.getElementById('alertas-lista');
+      cont.innerHTML = '<p class="empty-msg">Cargando...</p>';
+
+      const { data, error } = await supabase
+        .from('vista_alertas')
+        .select('*')
+        .eq('estado', 'pendiente')
+        .order('fecha_alerta', { ascending: true });
+
+      if (error) {
+        cont.innerHTML = `<p class="empty-msg">Error: ${error.message}</p>`;
+        return;
+      }
+      if (!data || data.length === 0) {
+        cont.innerHTML = '<p class="empty-msg">No hay alertas pendientes por ahora 🎉</p>';
+        return;
+      }
+
+      const tipoLabel = { vencimiento_poliza: 'Vencimiento de póliza', vencimiento_cuota: 'Vencimiento de cuota' };
+
+      cont.innerHTML = data.map((a) => `
+        <div class="alerta-item" data-id="${a.id}">
+          <div class="nombre">${a.nombre} ${a.apellido}</div>
+          <div class="meta">
+            ${tipoLabel[a.tipo] || a.tipo} · ${a.ramo}${a.detalle_ramo ? ` (${a.detalle_ramo})` : ''} ·
+            póliza ${a.numero_poliza} · en ${a.dias_anticipacion} días
+            ${a.productor ? ` · productor: ${a.productor}` : ''}
+          </div>
+          <div class="acciones">
+            <a class="btn-wsp" href="${a.enlace_whatsapp}" target="_blank" rel="noopener">Abrir WhatsApp</a>
+            <button type="button" class="btn-marcar" data-marcar="${a.id}">Marcar enviada</button>
+          </div>
+        </div>
+      `).join('');
+
+      cont.querySelectorAll('[data-marcar]').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const id = btn.dataset.marcar;
+          const { error } = await supabase.from('alertas').update({ estado: 'enviada' }).eq('id', id);
+          if (!error) {
+            const item = cont.querySelector(`.alerta-item[data-id="${id}"]`);
+            item.classList.add('enviada');
+            btn.disabled = true;
+            btn.textContent = 'Enviada ✓';
+          }
+        });
+      });
+    }
+
+    mostrarSegunSesion();
+  </script>
+</body>
+</html>

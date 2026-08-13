@@ -70,7 +70,18 @@ El workflow [`.github/workflows/deploy-landing.yml`](.github/workflows/deploy-la
 2. Empujá cualquier cambio en `landing/` (o disparalo a mano desde **Actions** → "Publicar landing en GitHub Pages" → **Run workflow**).
 3. Tu landing queda pública en `https://TU-USUARIO.github.io/TU-REPO/`.
 
+## Paso 9 — Panel interno (`landing/panel/`)
+
+Mini app con login para cargar clientes y pólizas sin usar Table Editor de Supabase directamente, y revisar/enviar las alertas del día con un click. Se publica junto con la landing (mismo workflow del Paso 8), en `https://TU-USUARIO.github.io/TU-REPO/panel/`.
+
+1. Corré [`db/rls_panel_autenticado.sql`](db/rls_panel_autenticado.sql) en el SQL Editor — habilita que un usuario logueado pueda leer/cargar datos (nadie sin login puede tocar nada de esto).
+2. Creá tu usuario para entrar al panel: Supabase → **Authentication → Users → Add user → Create new user** (email + contraseña, con "Auto Confirm User" activado). No tiene que ser el mismo email con el que administrás Supabase.
+3. Entrá a `/panel/` y logueate con ese usuario.
+
+El panel no permite borrar registros (a propósito, como medida de seguridad) — eso se sigue haciendo desde Table Editor.
+
 ## Próximos pasos
 
 - Definir las secuencias de conversación por ramo.
 - Reemplazar el envío manual de links por WhatsApp Business API si el volumen lo justifica.
+- Importar cartera en bloque desde Excel, backups automáticos, estados automáticos (cuota/póliza vencida).
