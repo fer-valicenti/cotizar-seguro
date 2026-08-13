@@ -107,6 +107,19 @@
   .btn-wsp { background: var(--color-accent); color: #fff; text-decoration: none; padding: 8px 12px; border-radius: 7px; font-size: 12.5px; font-weight: 700; }
   .btn-marcar { background: var(--color-bg); color: var(--color-text); border: 1.5px solid var(--color-border); font-size: 12.5px; padding: 8px 12px; border-radius: 7px; }
   .empty-msg { color: var(--color-muted); font-size: 13.5px; text-align: center; padding: 24px 0; }
+
+  .cliente-item { border: 1.5px solid var(--color-border); border-radius: 10px; padding: 14px; margin-bottom: 10px; }
+  .cliente-item .nombre { font-weight: 700; font-size: 14px; }
+  .cliente-item .telefono { color: var(--color-muted); font-size: 12.5px; margin-bottom: 10px; }
+  .poliza-badge { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-top: 1px solid var(--color-border); font-size: 12.5px; flex-wrap: wrap; }
+  .poliza-badge:first-of-type { border-top: none; }
+  .estado-pill { padding: 2px 8px; border-radius: 20px; font-weight: 700; font-size: 11px; text-transform: uppercase; }
+  .estado-activa { background: #E3F5E9; color: #1a7f37; }
+  .estado-vencida { background: #F3E9DC; color: #9a6a1c; }
+  .estado-cancelada { background: #F5E3E3; color: #b02a2a; }
+  .estado-renovada { background: #E3ECF5; color: #1a4f8f; }
+  .poliza-badge select { width: auto; padding: 4px 8px; font-size: 11.5px; margin-left: auto; }
+  .sin-polizas { color: var(--color-muted); font-size: 12.5px; font-style: italic; }
 </style>
 </head>
 <body>
@@ -133,6 +146,7 @@
     </header>
     <div class="tabs">
       <button class="tab-btn active" data-tab="alertas">Alertas de hoy</button>
+      <button class="tab-btn" data-tab="clientes">Clientes</button>
       <button class="tab-btn" data-tab="cliente">Nuevo cliente</button>
       <button class="tab-btn" data-tab="poliza">Nueva póliza</button>
     </div>
@@ -142,6 +156,11 @@
         <section id="tab-alertas">
           <h2>Alertas pendientes</h2>
           <div id="alertas-lista"><p class="empty-msg">Cargando...</p></div>
+        </section>
+
+        <section id="tab-clientes" style="display:none;">
+          <h2>Clientes y sus pólizas</h2>
+          <div id="clientes-lista"><p class="empty-msg">Cargando...</p></div>
         </section>
 
         <section id="tab-cliente" style="display:none;">
@@ -305,8 +324,66 @@
         document.getElementById(`tab-${btn.dataset.tab}`).style.display = 'block';
         if (btn.dataset.tab === 'alertas') cargarAlertas();
         if (btn.dataset.tab === 'poliza') cargarSelects();
+        if (btn.dataset.tab === 'clientes') cargarClientes();
       });
     });
+
+    // ---------- Clientes y sus pólizas ----------
+    const ESTADOS_POLIZA = ['activa', 'vencida', 'cancelada', 'renovada'];
+
+    async function cargarClientes() {
+      const cont = document.getElementById('clientes-lista');
+      cont.innerHTML = '<p class="empty-msg">Cargando...</p>';
+
+      const { data, error } = await supabase
+        .from('clientes')
+        .select('id, nombre, apellido, telefono, polizas(id, numero_poliza, estado, detalle_ramo, ramos(nombre))')
+        .order('nombre');
+
+      if (error) {
+        cont.innerHTML = `<p class="empty-msg">Error: ${error.message}</p>`;
+        return;
+      }
+      if (!data || data.length === 0) {
+        cont.innerHTML = '<p class="empty-msg">No hay clientes cargados todavía.</p>';
+        return;
+      }
+
+      cont.innerHTML = data.map((c) => `
+        <div class="cliente-item">
+          <div class="nombre">${c.nombre} ${c.apellido}</div>
+          <div class="telefono">${c.telefono}</div>
+          ${
+            c.polizas && c.polizas.length
+              ? c.polizas.map((p) => `
+                <div class="poliza-badge">
+                  <span class="estado-pill estado-${p.estado}">${p.estado}</span>
+                  <span>${p.ramos.nombre}${p.detalle_ramo ? ` (${p.detalle_ramo})` : ''} — ${p.numero_poliza}</span>
+                  <select data-poliza-id="${p.id}">
+                    ${ESTADOS_POLIZA.map(e => `<option value="${e}" ${e === p.estado ? 'selected' : ''}>${e}</option>`).join('')}
+                  </select>
+                </div>
+              `).join('')
+              : '<p class="sin-polizas">Sin pólizas cargadas</p>'
+          }
+        </div>
+      `).join('');
+
+      cont.querySelectorAll('select[data-poliza-id]').forEach((sel) => {
+        sel.addEventListener('change', async () => {
+          const id = sel.dataset.polizaId;
+          const nuevoEstado = sel.value;
+          const { error } = await supabase.from('polizas').update({ estado: nuevoEstado }).eq('id', id);
+          if (error) {
+            alert('Error al actualizar: ' + error.message);
+            return;
+          }
+          const pill = sel.closest('.poliza-badge').querySelector('.estado-pill');
+          pill.className = `estado-pill estado-${nuevoEstado}`;
+          pill.textContent = nuevoEstado;
+        });
+      });
+    }
 
     // ---------- Cargar selects (cliente/ramo/aseguradora/productor) ----------
     async function cargarSelects() {

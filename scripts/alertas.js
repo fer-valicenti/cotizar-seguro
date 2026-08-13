@@ -172,7 +172,26 @@ async function detectarVencimientosCuotas() {
   }
 }
 
+// Pasa a "vencida" cualquier póliza activa cuya vigencia ya terminó. Nunca
+// se borra nada — el cliente y el historial de la póliza quedan intactos
+// por si el día de mañana la renueva.
+async function marcarPolizasVencidas() {
+  const ahoraISO = new Date().toISOString();
+  const { data, error } = await supabase
+    .from('polizas')
+    .update({ estado: 'vencida' })
+    .eq('estado', 'activa')
+    .lt('fecha_vencimiento', ahoraISO)
+    .select('numero_poliza');
+
+  if (error) throw error;
+  if (data.length) {
+    console.log(`📋 ${data.length} póliza(s) pasaron a "vencida" automáticamente: ${data.map(p => p.numero_poliza).join(', ')}`);
+  }
+}
+
 async function main() {
+  await marcarPolizasVencidas();
   await detectarVencimientosPolizas();
   await detectarVencimientosCuotas();
   console.log('Listo. Revisá la tabla "alertas" en Supabase para ver los links generados.');
