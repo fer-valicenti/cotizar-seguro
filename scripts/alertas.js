@@ -135,13 +135,18 @@ async function detectarVencimientosCuotas() {
   for (const dias of DIAS_ANTICIPACION) {
     const { fechaStr: fechaObjetivoStr } = rangoDelDia(dias);
 
-    const { data: cuotas, error } = await supabase
+    const { data: todasLasCuotas, error } = await supabase
       .from('cuotas')
-      .select('id, poliza_id, fecha_vencimiento_cuota, polizas(numero_poliza, detalle_ramo, cliente_id, clientes(nombre, telefono), ramos(nombre))')
+      .select('id, poliza_id, fecha_vencimiento_cuota, polizas(numero_poliza, detalle_ramo, forma_pago, cliente_id, clientes(nombre, telefono), ramos(nombre))')
       .eq('estado', 'pendiente')
       .eq('fecha_vencimiento_cuota', fechaObjetivoStr);
 
     if (error) throw error;
+
+    // Con débito automático el pago se cobra solo — no hace falta recordarle
+    // la cuota al cliente (sí se lo sigue avisando del vencimiento total de
+    // la póliza, eso pasa en detectarVencimientosPolizas independientemente).
+    const cuotas = todasLasCuotas.filter(c => c.polizas.forma_pago !== 'debito_automatico');
 
     for (const cuota of cuotas) {
       const cliente = cuota.polizas.clientes;

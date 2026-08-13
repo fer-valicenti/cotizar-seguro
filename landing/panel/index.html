@@ -286,6 +286,7 @@
                 <label for="p-forma-pago">Forma de pago</label>
                 <select id="p-forma-pago">
                   <option value="mensual">Mensual</option>
+                  <option value="debito_automatico">Débito automático (mensual)</option>
                   <option value="trimestral">Trimestral</option>
                   <option value="semestral">Semestral</option>
                   <option value="anual">Anual</option>
@@ -671,7 +672,7 @@
     // forma de pago. No se tipea a mano, para que nunca quede inconsistente
     // con las fechas reales de la póliza (ej: una póliza de 6 meses en forma
     // mensual da 6 cuotas, no siempre 12).
-    const MESES_POR_CUOTA = { mensual: 1, trimestral: 3, semestral: 6, anual: 12, contado: null };
+    const MESES_POR_CUOTA = { mensual: 1, debito_automatico: 1, trimestral: 3, semestral: 6, anual: 12, contado: null };
 
     function mesesEntre(inicioStr, finStr) {
       const inicio = new Date(inicioStr);
