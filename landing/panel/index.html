@@ -222,19 +222,17 @@
                 <input type="number" id="p-prima" step="0.01">
               </div>
               <div>
-                <label for="p-cuotas">Cantidad de cuotas</label>
-                <input type="number" id="p-cuotas" value="1" min="1">
+                <label for="p-forma-pago">Forma de pago</label>
+                <select id="p-forma-pago">
+                  <option value="mensual">Mensual</option>
+                  <option value="trimestral">Trimestral</option>
+                  <option value="semestral">Semestral</option>
+                  <option value="anual">Anual</option>
+                  <option value="contado">Contado</option>
+                </select>
               </div>
             </div>
-
-            <label for="p-forma-pago">Forma de pago</label>
-            <select id="p-forma-pago">
-              <option value="mensual">Mensual</option>
-              <option value="trimestral">Trimestral</option>
-              <option value="semestral">Semestral</option>
-              <option value="anual">Anual</option>
-              <option value="contado">Contado</option>
-            </select>
+            <p class="sub" id="p-cuotas-preview" style="margin-top:8px;">Elegí inicio, vencimiento y forma de pago para calcular las cuotas.</p>
 
             <button type="submit" class="primary">Guardar póliza</button>
             <div class="error" id="poliza-error"></div>
@@ -371,6 +369,53 @@
       return valor ? `${valor}:00-03:00` : null;
     }
 
+    // Cantidad de cuotas = meses reales de vigencia / meses por cuota según
+    // forma de pago. No se tipea a mano, para que nunca quede inconsistente
+    // con las fechas reales de la póliza (ej: una póliza de 6 meses en forma
+    // mensual da 6 cuotas, no siempre 12).
+    const MESES_POR_CUOTA = { mensual: 1, trimestral: 3, semestral: 6, anual: 12, contado: null };
+
+    function mesesEntre(inicioStr, finStr) {
+      const inicio = new Date(inicioStr);
+      const fin = new Date(finStr);
+      let meses = (fin.getFullYear() - inicio.getFullYear()) * 12 + (fin.getMonth() - inicio.getMonth());
+      if (fin.getDate() < inicio.getDate()) meses -= 1;
+      return Math.max(meses, 0);
+    }
+
+    function calcularCantidadCuotas() {
+      const formaPago = document.getElementById('p-forma-pago').value;
+      const mesesPorCuota = MESES_POR_CUOTA[formaPago];
+      if (!mesesPorCuota) return 1; // contado: sin cuotas
+
+      const inicioVal = document.getElementById('p-inicio').value;
+      const vencVal = document.getElementById('p-vencimiento').value;
+      if (!inicioVal || !vencVal) return null;
+
+      const meses = mesesEntre(inicioVal, vencVal);
+      return Math.max(Math.round(meses / mesesPorCuota), 1);
+    }
+
+    function actualizarPreviewCuotas() {
+      const preview = document.getElementById('p-cuotas-preview');
+      const cantidad = calcularCantidadCuotas();
+      if (cantidad === null) {
+        preview.textContent = 'Elegí inicio, vencimiento y forma de pago para calcular las cuotas.';
+        return;
+      }
+      if (cantidad <= 1) {
+        preview.textContent = 'Se paga de una sola vez (sin cuotas).';
+        return;
+      }
+      const prima = parseFloat(document.getElementById('p-prima').value);
+      const montoTxt = prima ? ` de ~$${Math.round(prima / cantidad).toLocaleString('es-AR')} c/u` : '';
+      preview.textContent = `Se van a generar ${cantidad} cuotas${montoTxt}.`;
+    }
+
+    ['p-inicio', 'p-vencimiento', 'p-forma-pago', 'p-prima'].forEach((id) => {
+      document.getElementById(id).addEventListener('input', actualizarPreviewCuotas);
+    });
+
     document.getElementById('poliza-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const errorEl = document.getElementById('poliza-error');
@@ -391,7 +436,7 @@
         fecha_inicio_vigencia: datetimeLocalAIso(document.getElementById('p-inicio').value),
         fecha_vencimiento: datetimeLocalAIso(document.getElementById('p-vencimiento').value),
         prima: document.getElementById('p-prima').value || null,
-        cantidad_cuotas: document.getElementById('p-cuotas').value || 1,
+        cantidad_cuotas: calcularCantidadCuotas() || 1,
         forma_pago: document.getElementById('p-forma-pago').value,
         estado: 'activa',
       });

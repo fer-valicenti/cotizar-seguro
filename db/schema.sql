@@ -111,7 +111,10 @@ BEGIN
 
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+-- SECURITY DEFINER: las cuotas se generan con permisos propios del trigger,
+-- sin necesidad de darle a nadie (ni al panel logueado) permiso para
+-- insertar en "cuotas" directamente. Así solo se crean por esta vía.
 
 CREATE TRIGGER trigger_generar_cuotas
     AFTER INSERT ON polizas
