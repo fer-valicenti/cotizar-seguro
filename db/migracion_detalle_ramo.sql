@@ -1,11 +1,10 @@
--- Vista de lectura fácil para la tabla "alertas".
--- Junta cliente + póliza + ramo en una sola fila, para no tener que
--- ir saltando entre tablas para saber "a quién hay que escribirle".
---
+-- Migración: agrega un campo para especificar qué es exactamente cuando el
+-- ramo de la póliza es "Otros" (ej: "seguro de viajero", "seguro de mascota").
 -- Ejecutar una sola vez en el SQL Editor de Supabase.
--- Después va a aparecer como "vista_alertas" en Table Editor, en la
--- sección "Views" (debajo de las tablas normales).
 
+ALTER TABLE polizas ADD COLUMN detalle_ramo TEXT;
+
+DROP VIEW IF EXISTS vista_alertas;
 CREATE OR REPLACE VIEW vista_alertas AS
 SELECT
     a.id,

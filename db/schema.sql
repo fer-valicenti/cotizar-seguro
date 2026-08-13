@@ -45,6 +45,7 @@ CREATE TABLE polizas (
     aseguradora_id INT REFERENCES aseguradoras(id),
     productor_id INT REFERENCES productores(id),
     numero_poliza TEXT NOT NULL,
+    detalle_ramo TEXT,                -- qué es exactamente cuando ramo_id = "Otros" (ej: "seguro de viajero")
     fecha_emision DATE,
     -- Con hora y minuto exactos: el contrato de seguro fija el momento preciso en que
     -- empieza y termina la cobertura (por convención, 12:00hs), no solo el día.

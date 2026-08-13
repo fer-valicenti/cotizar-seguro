@@ -251,6 +251,11 @@
           <label for="ramo-otros" class="ramo-option"><span class="emoji">✈️</span>Otros</label>
         </div>
 
+        <div id="otros-detalle-wrap" style="display:none;">
+          <label for="otros-detalle">¿Qué tipo de seguro? (ej: viajero, mascota, bicicleta)</label>
+          <input type="text" id="otros-detalle" placeholder="Contanos qué necesitás asegurar">
+        </div>
+
         <button type="submit" id="submit-btn">
           <span>Continuar por WhatsApp</span>
         </button>
@@ -281,12 +286,23 @@
       'Accidentes Personales': (nombre) => `Hola! Soy ${nombre}, quiero cotizar un seguro de *Accidentes Personales*.`,
       'Comercio': (nombre) => `Hola! Soy ${nombre}, quiero cotizar un seguro de *Comercio*.`,
       'Vida': (nombre) => `Hola! Soy ${nombre}, quiero cotizar un seguro de *Vida*.`,
-      'Otros': (nombre) => `Hola! Soy ${nombre}, quiero cotizar un seguro (no está en la lista, te cuento cuál).`,
+      'Otros': (nombre, detalle) => `Hola! Soy ${nombre}, quiero cotizar un seguro de *${detalle}*.`,
     };
 
     const form = document.getElementById('lead-form');
     const errorMsg = document.getElementById('error-msg');
     const submitBtn = document.getElementById('submit-btn');
+    const otrosWrap = document.getElementById('otros-detalle-wrap');
+    const otrosDetalle = document.getElementById('otros-detalle');
+
+    form.querySelectorAll('input[name="ramo"]').forEach((input) => {
+      input.addEventListener('change', () => {
+        const esOtros = input.value === 'Otros' && input.checked;
+        otrosWrap.style.display = esOtros ? 'block' : 'none';
+        otrosDetalle.required = esOtros;
+        if (!esOtros) otrosDetalle.value = '';
+      });
+    });
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -299,21 +315,29 @@
         return;
       }
 
+      const ramo = ramoInput.value;
+      const detalleOtros = otrosDetalle.value.trim();
+      if (ramo === 'Otros' && !detalleOtros) {
+        errorMsg.textContent = 'Contanos qué tipo de seguro necesitás.';
+        errorMsg.style.display = 'block';
+        return;
+      }
+
       submitBtn.disabled = true;
       submitBtn.textContent = 'Enviando...';
 
       const nombreCompleto = document.getElementById('nombre').value.trim();
       const telefono = document.getElementById('telefono').value.trim();
-      const ramo = ramoInput.value;
       const [nombre, ...resto] = nombreCompleto.split(' ');
       const apellido = resto.join(' ') || '-';
+      const interes = ramo === 'Otros' ? `Otros (${detalleOtros})` : ramo;
 
       const { error } = await supabase.from('clientes').insert({
         nombre,
         apellido,
         telefono: '54' + telefono.replace(/[^\d]/g, ''),
         origen_lead: 'landing',
-        notas: `Interés inicial: ${ramo}`,
+        notas: `Interés inicial: ${interes}`,
       });
 
       if (error) {
@@ -325,7 +349,7 @@
         return;
       }
 
-      const mensaje = MENSAJES_POR_RAMO[ramo](nombre);
+      const mensaje = MENSAJES_POR_RAMO[ramo](nombre, detalleOtros);
       const link = `https://wa.me/${NUMERO_WHATSAPP_DESTINO}?text=${encodeURIComponent(mensaje)}`;
       window.location.href = link;
     });

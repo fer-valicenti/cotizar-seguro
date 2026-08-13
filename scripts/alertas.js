@@ -26,6 +26,12 @@ const PLANTILLAS = {
     `pago. Cualquier consulta, avisame 🙌`,
 };
 
+// Cuando el ramo es "Otros" (o cualquiera con detalle cargado), lo mostramos
+// junto al detalle: "Otros (seguro de viajero)" en vez de solo "Otros".
+function nombreRamo(ramo, detalle) {
+  return detalle ? `${ramo} (${detalle})` : ramo;
+}
+
 function generarLinkWhatsapp(telefono, mensaje) {
   const telefonoLimpio = telefono.replace(/[^\d]/g, ''); // solo dígitos, con código de país
   const textoCodificado = encodeURIComponent(mensaje);
@@ -87,7 +93,7 @@ async function detectarVencimientosPolizas() {
 
     const { data: polizas, error } = await supabase
       .from('polizas')
-      .select('id, numero_poliza, fecha_vencimiento, cliente_id, clientes(nombre, apellido, telefono), ramos(nombre)')
+      .select('id, numero_poliza, fecha_vencimiento, detalle_ramo, cliente_id, clientes(nombre, apellido, telefono), ramos(nombre)')
       .eq('estado', 'activa')
       .gte('fecha_vencimiento', inicio)
       .lt('fecha_vencimiento', fin);
@@ -98,7 +104,7 @@ async function detectarVencimientosPolizas() {
       const nombreCompleto = `${poliza.clientes.nombre} ${poliza.clientes.apellido}`;
       const mensaje = PLANTILLAS.vencimiento_poliza(
         poliza.clientes.nombre,
-        poliza.ramos.nombre,
+        nombreRamo(poliza.ramos.nombre, poliza.detalle_ramo),
         formatearFecha(poliza.fecha_vencimiento),
         dias
       );
@@ -131,7 +137,7 @@ async function detectarVencimientosCuotas() {
 
     const { data: cuotas, error } = await supabase
       .from('cuotas')
-      .select('id, poliza_id, fecha_vencimiento_cuota, polizas(numero_poliza, cliente_id, clientes(nombre, telefono), ramos(nombre))')
+      .select('id, poliza_id, fecha_vencimiento_cuota, polizas(numero_poliza, detalle_ramo, cliente_id, clientes(nombre, telefono), ramos(nombre))')
       .eq('estado', 'pendiente')
       .eq('fecha_vencimiento_cuota', fechaObjetivoStr);
 
@@ -141,7 +147,7 @@ async function detectarVencimientosCuotas() {
       const cliente = cuota.polizas.clientes;
       const mensaje = PLANTILLAS.vencimiento_cuota(
         cliente.nombre,
-        cuota.polizas.ramos.nombre,
+        nombreRamo(cuota.polizas.ramos.nombre, cuota.polizas.detalle_ramo),
         formatearFechaSimple(cuota.fecha_vencimiento_cuota),
         dias
       );
