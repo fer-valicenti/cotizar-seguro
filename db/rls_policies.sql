@@ -12,6 +12,7 @@ ALTER TABLE interacciones ENABLE ROW LEVEL SECURITY;
 ALTER TABLE alertas ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ramos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE aseguradoras ENABLE ROW LEVEL SECURITY;
+ALTER TABLE productores ENABLE ROW LEVEL SECURITY;
 
 -- Único permiso público: la landing puede INSERTAR un lead nuevo en "clientes".
 -- No puede leer, editar ni borrar nada (ni su propio registro ni el de nadie más).

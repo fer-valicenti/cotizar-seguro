@@ -1,11 +1,18 @@
--- Vista de lectura fácil para la tabla "alertas".
--- Junta cliente + póliza + ramo en una sola fila, para no tener que
--- ir saltando entre tablas para saber "a quién hay que escribirle".
---
+-- Migración: agrega el catálogo de productores (PAS) y lo vincula a cada póliza.
 -- Ejecutar una sola vez en el SQL Editor de Supabase.
--- Después va a aparecer como "vista_alertas" en Table Editor, en la
--- sección "Views" (debajo de las tablas normales).
 
+CREATE TABLE productores (
+    id SERIAL PRIMARY KEY,
+    nombre TEXT NOT NULL,
+    matricula TEXT,
+    contacto TEXT
+);
+ALTER TABLE productores ENABLE ROW LEVEL SECURITY;
+
+ALTER TABLE polizas ADD COLUMN productor_id INT REFERENCES productores(id);
+
+-- Actualizamos vista_alertas para que también muestre el productor de cada póliza.
+DROP VIEW IF EXISTS vista_alertas;
 CREATE OR REPLACE VIEW vista_alertas AS
 SELECT
     a.id,
