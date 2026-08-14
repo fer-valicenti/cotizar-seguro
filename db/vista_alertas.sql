@@ -28,3 +28,8 @@ JOIN clientes c ON c.id = p.cliente_id
 JOIN ramos r ON r.id = p.ramo_id
 LEFT JOIN productores pr ON pr.id = p.productor_id
 ORDER BY a.fecha_alerta ASC, a.dias_anticipacion ASC;
+
+-- Sin esto, la vista corre con los permisos de quien la creó (superusuario)
+-- en vez de los de quien la consulta, saltándose el RLS de las tablas que
+-- junta. Con security_invoker, respeta los permisos reales del usuario.
+ALTER VIEW vista_alertas SET (security_invoker = true);

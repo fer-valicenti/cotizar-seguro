@@ -121,6 +121,9 @@ CREATE TRIGGER trigger_generar_cuotas
     FOR EACH ROW
     EXECUTE FUNCTION generar_cuotas_poliza();
 
+-- Solo la dispara el propio trigger, nunca una persona directamente.
+REVOKE EXECUTE ON FUNCTION generar_cuotas_poliza() FROM PUBLIC;
+
 -- ===== INTERACCIONES (historial de contacto) =====
 CREATE TABLE interacciones (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
