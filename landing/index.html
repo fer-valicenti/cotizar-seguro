@@ -55,6 +55,50 @@
     pointer-events: none;
   }
   .hero > * { position: relative; }
+
+  /* ---------- Logos de aseguradoras (franja propia, abajo del todo, sin
+     cruzarse con el resto del contenido del hero) ---------- */
+  .hero-logo-bg {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 8px;
+    height: 46px;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    pointer-events: none;
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  }
+  .hero-logo-track {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: max-content;
+    animation-name: hero-logo-scroll;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+  }
+  .hero-logo-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 40px;
+    padding: 0 14px;
+    background: rgba(255,255,255,0.96);
+    border-radius: 9px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.18);
+  }
+  .hero-logo-item img { height: 22px; width: auto; max-width: 92px; object-fit: contain; display: block; }
+  @keyframes hero-logo-scroll {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hero-logo-track { animation: none; }
+  }
+
   .topbrand {
     display: inline-flex;
     align-items: center;
@@ -311,6 +355,7 @@
 <body>
 
   <section class="hero">
+    <div class="hero-logo-bg" id="hero-logo-bg" style="display:none;"><div class="hero-logo-track" id="hero-logo-track"></div></div>
     <div class="topbrand fade-up"><span class="emoji">🛡️</span>Cotizá tu seguro</div>
     <h1 class="fade-up d1">Cotizá tu seguro en minutos, sin vueltas</h1>
     <p class="fade-up d1">Te ayudamos a encontrar la cobertura ideal y seguimos toda la gestión por WhatsApp, de principio a fin.</p>
@@ -443,6 +488,115 @@
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+    // Logos oficiales guardados en assets/aseguradoras/ — nombre de la
+    // aseguradora (en minúscula) -> archivo. Solo se usan como capa de fondo
+    // decorativa; si una aseguradora no tiene logo acá, simplemente no
+    // aparece en el fondo (la franja de nombres de adelante sí las muestra
+    // a todas igual).
+    const LOGOS_ASEGURADORAS = {
+      'federación patronal seguros': 'federacion-patronal-seguros.png',
+      'la caja seguros': 'la-caja-seguros.png',
+      'sancor seguros': 'sancor-seguros.png',
+      'mercantil andina': 'mercantil-andina.png',
+      'rivadavia seguros': 'rivadavia-seguros.webp',
+      'la segunda seguros': 'la-segunda-seguros.jpg',
+      'zurich argentina': 'zurich-argentina.jpg',
+      'provincia seguros': 'provincia-seguros.webp',
+      'allianz argentina': 'allianz-argentina.png',
+      'rio uruguay seguros': 'rio-uruguay-seguros.png',
+    };
+
+    // Los archivos originales tienen fondo blanco sólido — sin esto, cada
+    // logo se vería como un recuadro gris en vez de flotar sobre el azul.
+    // Recorta (vía canvas) solo el blanco conectado con el borde de la
+    // imagen, así no toca detalles blancos que sean parte del propio logo.
+    function quitarFondoBlanco(img) {
+      const ESCALA_MAX = 300; // de sobra para mostrarlo a ~50px de alto
+      const factor = Math.min(1, ESCALA_MAX / Math.max(img.naturalWidth, img.naturalHeight));
+      const w = Math.max(1, Math.round(img.naturalWidth * factor));
+      const h = Math.max(1, Math.round(img.naturalHeight * factor));
+
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+
+      const imageData = ctx.getImageData(0, 0, w, h);
+      const d = imageData.data;
+      const UMBRAL = 238;
+      const esClaro = (i) => d[i] > UMBRAL && d[i + 1] > UMBRAL && d[i + 2] > UMBRAL;
+
+      const visitado = new Uint8Array(w * h);
+      const pila = [];
+      for (let x = 0; x < w; x++) { pila.push(x, 0, x, h - 1); }
+      for (let y = 0; y < h; y++) { pila.push(0, y, w - 1, y); }
+
+      while (pila.length) {
+        const y = pila.pop();
+        const x = pila.pop();
+        if (x < 0 || y < 0 || x >= w || y >= h) continue;
+        const idx = y * w + x;
+        if (visitado[idx]) continue;
+        visitado[idx] = 1;
+        const i = idx * 4;
+        if (!esClaro(i)) continue;
+        d[i + 3] = 0;
+        pila.push(x + 1, y, x - 1, y, x, y + 1, x, y - 1);
+      }
+
+      ctx.putImageData(imageData, 0, 0);
+      return canvas.toDataURL('image/png');
+    }
+
+    function cargarImagenProcesada(archivo) {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          try { resolve(quitarFondoBlanco(img)); }
+          catch { resolve(img.src); }
+        };
+        img.onerror = () => resolve(null);
+        img.src = `assets/aseguradoras/${archivo}`;
+      });
+    }
+
+    // Capa de fondo con los logos, moviéndose despacio y tenue detrás de
+    // todo el contenido del hero (fondo azul).
+    async function cargarLogosDeFondo(nombres) {
+      const disponibles = nombres
+        .map((nombre) => ({ nombre, archivo: LOGOS_ASEGURADORAS[nombre.toLowerCase().trim()] }))
+        .filter((x) => x.archivo);
+      if (!disponibles.length) return;
+
+      const procesados = await Promise.all(
+        disponibles.map(async ({ nombre, archivo }) => ({ nombre, dataUrl: await cargarImagenProcesada(archivo) }))
+      );
+      const listos = procesados.filter((x) => x.dataUrl);
+      if (!listos.length) return;
+
+      const repeticiones = listos.length < 5 ? 4 : 2;
+      const bloque = Array.from({ length: repeticiones }, () => listos).flat();
+      const track = document.getElementById('hero-logo-track');
+
+      [...bloque, ...bloque].forEach(({ nombre, dataUrl }) => {
+        const item = document.createElement('div');
+        item.className = 'hero-logo-item';
+        const img = document.createElement('img');
+        img.src = dataUrl;
+        img.alt = nombre;
+        item.appendChild(img);
+        track.appendChild(item);
+      });
+
+      document.getElementById('hero-logo-bg').style.display = 'flex';
+
+      const VELOCIDAD_PX_POR_SEG = 26;
+      const anchoBloque = track.scrollWidth / 2;
+      const duracionSeg = Math.max(anchoBloque / VELOCIDAD_PX_POR_SEG, 20);
+      track.style.animationDuration = `${duracionSeg}s`;
+    }
+
     // Franja animada con las aseguradoras reales cargadas en el panel — si no
     // hay ninguna, o falla la consulta, la sección queda oculta (no se ve un
     // hueco vacío ni una franja rota).
@@ -452,6 +606,8 @@
 
       const nombres = data.map((a) => a.nombre).filter(Boolean);
       if (!nombres.length) return;
+
+      cargarLogosDeFondo(nombres); // no bloquea el resto — se procesa y aparece cuando esté listo
 
       // Se repite lo necesario para que la tira nunca se quede corta (si hay
       // pocas aseguradoras cargadas) y el loop de -50% siempre cierre parejo.
