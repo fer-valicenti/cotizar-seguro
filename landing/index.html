@@ -7,15 +7,20 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛡️</text></svg>">
 <style>
   :root {
-    --color-primary: #0F3D5F;
-    --color-primary-light: #1B5A85;
-    --color-accent: #25D366;
-    --color-bg: #F4F7FA;
+    --color-dark: #0F172A;
+    --color-dark-2: #1E3A8A;
+    --color-primary: #2563EB;
+    --color-primary-dark: #1D4ED8;
+    --color-primary-light: #3B82F6;
+    --color-accent-wsp: #25D366;
+    --color-accent-wsp-dark: #1DA851;
+    --color-bg: #F1F5F9;
     --color-card: #FFFFFF;
-    --color-text: #14202B;
-    --color-muted: #5B6B78;
-    --color-border: #E1E7ED;
-    --radius: 14px;
+    --color-text: #0F172A;
+    --color-muted: #64748B;
+    --color-border: #E2E8F0;
+    --radius: 12px;
+    --radius-lg: 20px;
   }
   * { box-sizing: border-box; }
   body {
@@ -24,26 +29,55 @@
     color: var(--color-text);
     margin: 0;
   }
+  svg.icon { width: 20px; height: 20px; flex-shrink: 0; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .fade-up { animation: fadeUp 0.6s ease both; }
+    .fade-up.d1 { animation-delay: 0.08s; }
+    .fade-up.d2 { animation-delay: 0.16s; }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+  }
 
   /* ---------- Hero ---------- */
   .hero {
-    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
+    position: relative;
+    background: linear-gradient(160deg, var(--color-dark) 0%, var(--color-dark-2) 100%);
     color: #fff;
-    padding: 48px 20px 64px;
+    padding: 28px 20px 72px;
     text-align: center;
+    overflow: hidden;
   }
-  .hero-badge {
-    font-size: 40px;
-    margin-bottom: 8px;
+  .hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 80% -10%, rgba(37,99,235,0.35), transparent 55%);
+    pointer-events: none;
   }
+  .hero > * { position: relative; }
+  .topbrand {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.9);
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.16);
+    border-radius: 30px;
+    padding: 6px 14px 6px 10px;
+    margin-bottom: 22px;
+  }
+  .topbrand .emoji { font-size: 16px; }
   .hero h1 {
     font-size: 28px;
     line-height: 1.25;
     margin: 0 0 12px;
+    letter-spacing: -0.01em;
   }
   .hero p {
     font-size: 15px;
-    color: rgba(255,255,255,0.85);
+    color: rgba(255,255,255,0.78);
     max-width: 440px;
     margin: 0 auto;
   }
@@ -55,19 +89,23 @@
     margin: 28px auto 0;
   }
   .trust-item {
-    background: rgba(255,255,255,0.1);
-    border: 1px solid rgba(255,255,255,0.18);
-    border-radius: 10px;
-    padding: 10px 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.16);
+    border-radius: var(--radius);
+    padding: 12px 12px;
     font-size: 12.5px;
     font-weight: 600;
+    text-align: left;
   }
-  .trust-item span { display: block; font-size: 18px; margin-bottom: 4px; }
+  .trust-item svg.icon { color: #7DD3FC; width: 18px; height: 18px; }
 
   /* ---------- Cómo funciona ---------- */
   .steps {
-    max-width: 620px;
-    margin: -34px auto 0;
+    max-width: 640px;
+    margin: -40px auto 0;
     padding: 0 20px;
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -75,21 +113,31 @@
   }
   .step {
     background: var(--color-card);
-    border-radius: var(--radius);
-    padding: 16px 12px;
+    border-radius: var(--radius-lg);
+    padding: 18px 12px 16px;
     text-align: center;
-    box-shadow: 0 6px 18px rgba(15,61,95,0.10);
+    box-shadow: 0 10px 26px rgba(15,23,42,0.14);
+  }
+  .step .step-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: #EFF6FF;
+    color: var(--color-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 8px;
   }
   .step .num {
-    width: 26px;
-    height: 26px;
-    line-height: 26px;
-    border-radius: 50%;
-    background: var(--color-primary);
-    color: #fff;
-    font-size: 13px;
-    font-weight: 700;
-    margin: 0 auto 8px;
+    display: inline-block;
+    font-size: 10.5px;
+    font-weight: 800;
+    color: var(--color-primary);
+    background: #EFF6FF;
+    border-radius: 20px;
+    padding: 1px 7px;
+    margin-bottom: 6px;
   }
   .step p {
     font-size: 12.5px;
@@ -108,14 +156,15 @@
     background: var(--color-card);
     max-width: 460px;
     width: 100%;
-    padding: 32px 24px;
-    border-radius: var(--radius);
-    box-shadow: 0 4px 20px rgba(15,61,95,0.08);
+    padding: 32px 28px;
+    border-radius: var(--radius-lg);
+    box-shadow: 0 4px 24px rgba(15,23,42,0.08);
+    border: 1px solid var(--color-border);
   }
-  .card h2 { font-size: 18px; margin: 0 0 4px; }
+  .card h2 { font-size: 19px; margin: 0 0 4px; }
   .card p.sub { color: var(--color-muted); margin-top: 0; margin-bottom: 20px; font-size: 13.5px; }
 
-  label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 6px; margin-top: 18px; }
+  label { display: block; font-size: 12.5px; font-weight: 700; color: var(--color-muted); text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 6px; margin-top: 18px; }
   input {
     width: 100%;
     padding: 12px 14px;
@@ -124,16 +173,20 @@
     font-size: 15px;
     background: #fff;
     color: var(--color-text);
+    font-family: inherit;
   }
-  input:focus { outline: none; border-color: var(--color-primary-light); }
+  input:focus { outline: none; border-color: var(--color-primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.12); }
 
   .ramo-grid {
+    position: relative;
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 8px;
   }
   .ramo-grid input[type="radio"] {
     position: absolute;
+    width: 1px;
+    height: 1px;
     opacity: 0;
     pointer-events: none;
   }
@@ -142,29 +195,34 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 4px;
+    gap: 6px;
     border: 1.5px solid var(--color-border);
-    border-radius: 10px;
-    padding: 10px 4px;
+    border-radius: var(--radius);
+    padding: 12px 4px 10px;
     text-align: center;
     font-size: 11.5px;
     font-weight: 600;
     color: var(--color-muted);
     cursor: pointer;
-    transition: border-color 0.15s, background 0.15s, color 0.15s;
+    transition: border-color 0.15s, background 0.15s, color 0.15s, transform 0.1s;
   }
-  .ramo-option .emoji { font-size: 20px; }
+  .ramo-option:hover { transform: translateY(-1px); }
+  .ramo-option svg.icon { width: 22px; height: 22px; }
   .ramo-grid input[type="radio"]:checked + .ramo-option {
     border-color: var(--color-primary);
-    background: #EAF2F8;
+    background: #EFF6FF;
     color: var(--color-primary);
+  }
+  .ramo-grid input[type="radio"]:focus-visible + .ramo-option {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 1px;
   }
 
   button[type="submit"] {
     width: 100%;
     margin-top: 24px;
     padding: 14px;
-    background: var(--color-accent);
+    background: var(--color-accent-wsp);
     color: #fff;
     border: none;
     border-radius: 9px;
@@ -175,47 +233,79 @@
     align-items: center;
     justify-content: center;
     gap: 8px;
+    transition: background 0.15s;
   }
+  button[type="submit"]:hover:not(:disabled) { background: var(--color-accent-wsp-dark); }
   button[type="submit"]:disabled { opacity: 0.6; cursor: not-allowed; }
   .error { color: #c0392b; font-size: 13px; margin-top: 10px; display: none; }
   .privacy-note {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
     text-align: center;
     font-size: 11.5px;
     color: var(--color-muted);
     margin-top: 16px;
   }
+  .privacy-note svg.icon { width: 14px; height: 14px; }
 
   footer {
     text-align: center;
-    padding: 8px 16px 32px;
+    padding: 8px 16px 36px;
     font-size: 12px;
     color: var(--color-muted);
   }
 
   @media (max-width: 480px) {
-    .steps { grid-template-columns: 1fr; margin-top: -24px; }
+    .steps { grid-template-columns: 1fr; margin-top: -28px; }
     .hero h1 { font-size: 24px; }
+    .card { padding: 28px 20px; }
   }
 </style>
 </head>
 <body>
 
   <section class="hero">
-    <div class="hero-badge">🛡️</div>
-    <h1>Cotizá tu seguro en minutos, sin vueltas</h1>
-    <p>Te ayudamos a encontrar la cobertura ideal y seguimos toda la gestión por WhatsApp, de principio a fin.</p>
-    <div class="trust-row">
-      <div class="trust-item"><span>⚡</span>Respuesta en el día</div>
-      <div class="trust-item"><span>💬</span>100% por WhatsApp</div>
-      <div class="trust-item"><span>🏢</span>Múltiples aseguradoras</div>
-      <div class="trust-item"><span>🔒</span>Sin compromiso</div>
+    <div class="topbrand fade-up"><span class="emoji">🛡️</span>Cotizá tu seguro</div>
+    <h1 class="fade-up d1">Cotizá tu seguro en minutos, sin vueltas</h1>
+    <p class="fade-up d1">Te ayudamos a encontrar la cobertura ideal y seguimos toda la gestión por WhatsApp, de principio a fin.</p>
+    <div class="trust-row fade-up d2">
+      <div class="trust-item">
+        <svg class="icon" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+        Respuesta en el día
+      </div>
+      <div class="trust-item">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+        100% por WhatsApp
+      </div>
+      <div class="trust-item">
+        <svg class="icon" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+        Múltiples aseguradoras
+      </div>
+      <div class="trust-item">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+        Sin compromiso
+      </div>
     </div>
   </section>
 
   <div class="steps">
-    <div class="step"><div class="num">1</div><p>Completás tus datos</p></div>
-    <div class="step"><div class="num">2</div><p>Te escribimos por WhatsApp</p></div>
-    <div class="step"><div class="num">3</div><p>Elegís tu cobertura ideal</p></div>
+    <div class="step">
+      <div class="step-icon"><svg class="icon" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></div>
+      <div class="num">Paso 1</div>
+      <p>Completás tus datos</p>
+    </div>
+    <div class="step">
+      <div class="step-icon"><svg class="icon" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg></div>
+      <div class="num">Paso 2</div>
+      <p>Te escribimos por WhatsApp</p>
+    </div>
+    <div class="step">
+      <div class="step-icon"><svg class="icon" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg></div>
+      <div class="num">Paso 3</div>
+      <p>Elegís tu cobertura ideal</p>
+    </div>
   </div>
 
   <main>
@@ -233,22 +323,40 @@
         <label>¿Qué querés asegurar?</label>
         <div class="ramo-grid" id="ramo-grid">
           <input type="radio" name="ramo" value="Vehiculo" id="ramo-vehiculo" required>
-          <label for="ramo-vehiculo" class="ramo-option"><span class="emoji">🚗</span>Vehículo</label>
+          <label for="ramo-vehiculo" class="ramo-option">
+            <svg class="icon" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
+            Vehículo
+          </label>
 
           <input type="radio" name="ramo" value="Hogar" id="ramo-hogar">
-          <label for="ramo-hogar" class="ramo-option"><span class="emoji">🏠</span>Hogar</label>
+          <label for="ramo-hogar" class="ramo-option">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M3 12l9-9 9 9"></path><path d="M5 10v10a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-6h4v6a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1V10"></path></svg>
+            Hogar
+          </label>
 
           <input type="radio" name="ramo" value="Accidentes Personales" id="ramo-ap">
-          <label for="ramo-ap" class="ramo-option"><span class="emoji">🚑</span>Accidentes</label>
+          <label for="ramo-ap" class="ramo-option">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
+            Accidentes
+          </label>
 
           <input type="radio" name="ramo" value="Comercio" id="ramo-comercio">
-          <label for="ramo-comercio" class="ramo-option"><span class="emoji">🏢</span>Comercio</label>
+          <label for="ramo-comercio" class="ramo-option">
+            <svg class="icon" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+            Comercio
+          </label>
 
           <input type="radio" name="ramo" value="Vida" id="ramo-vida">
-          <label for="ramo-vida" class="ramo-option"><span class="emoji">❤️</span>Vida</label>
+          <label for="ramo-vida" class="ramo-option">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+            Vida
+          </label>
 
           <input type="radio" name="ramo" value="Otros" id="ramo-otros">
-          <label for="ramo-otros" class="ramo-option"><span class="emoji">✈️</span>Otros</label>
+          <label for="ramo-otros" class="ramo-option">
+            <svg class="icon" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+            Otros
+          </label>
         </div>
 
         <div id="otros-detalle-wrap" style="display:none;">
@@ -257,10 +365,14 @@
         </div>
 
         <button type="submit" id="submit-btn">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
           <span>Continuar por WhatsApp</span>
         </button>
         <div class="error" id="error-msg">Hubo un problema. Intentá de nuevo o escribinos directamente.</div>
-        <p class="privacy-note">Tus datos están protegidos y no se comparten con terceros.</p>
+        <p class="privacy-note">
+          <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+          Tus datos están protegidos y no se comparten con terceros.
+        </p>
       </form>
     </div>
   </main>
@@ -324,7 +436,7 @@
       }
 
       submitBtn.disabled = true;
-      submitBtn.textContent = 'Enviando...';
+      submitBtn.querySelector('span').textContent = 'Enviando...';
 
       const nombreCompleto = document.getElementById('nombre').value.trim();
       const telefono = document.getElementById('telefono').value.trim();
@@ -345,7 +457,7 @@
         errorMsg.textContent = 'Hubo un problema. Intentá de nuevo o escribinos directamente.';
         errorMsg.style.display = 'block';
         submitBtn.disabled = false;
-        submitBtn.innerHTML = '<span>Continuar por WhatsApp</span>';
+        submitBtn.querySelector('span').textContent = 'Continuar por WhatsApp';
         return;
       }
 

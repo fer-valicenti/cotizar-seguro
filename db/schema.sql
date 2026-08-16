@@ -64,6 +64,22 @@ CREATE TABLE polizas (
 CREATE INDEX idx_polizas_vencimiento ON polizas(fecha_vencimiento);
 CREATE INDEX idx_polizas_cliente ON polizas(cliente_id);
 
+-- Mantiene "updated_at" al día en cada cambio (no solo al crear la fila), para
+-- poder saber si una póliza cambió de estado (renovada/cancelada/vencida) esta
+-- semana o hace tiempo — lo usa el reporte semanal.
+CREATE OR REPLACE FUNCTION tocar_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = now();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_polizas_updated_at
+    BEFORE UPDATE ON polizas
+    FOR EACH ROW
+    EXECUTE FUNCTION tocar_updated_at();
+
 -- ===== CUOTAS / COBRANZAS =====
 CREATE TABLE cuotas (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

@@ -5,11 +5,14 @@
   "type": "module",
   "scripts": {
     "alertas": "node scripts/alertas.js",
-    "importar": "node scripts/importar_cartera.mjs"
+    "importar": "node scripts/importar_cartera.mjs",
+    "reporte": "node scripts/reporte_semanal.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",
     "dotenv": "^16.4.5",
+    "pdfkit": "^0.19.1",
+    "resend": "^6.20.0",
     "xlsx": "https://cdn.sheetjs.com/xlsx-latest/xlsx-latest.tgz"
   }
 }

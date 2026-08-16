@@ -96,6 +96,24 @@ Para cargar muchos clientes/pólizas de una sola vez en vez de uno por uno:
 
 Ojo con los números de póliza puramente numéricos en Excel: si la columna no está formateada como texto, puede perder ceros a la izquierda. Si tenés casos así, formateá esa columna como "Texto" en Excel antes de exportar.
 
+## Paso 11 — Reporte semanal por mail (Resend)
+
+El workflow [`.github/workflows/reporte_semanal.yml`](.github/workflows/reporte_semanal.yml) arma automáticamente, todos los lunes a las 8am (hora Argentina), un PDF con toda la actividad de la semana (clientes nuevos, pólizas nuevas/renovadas/canceladas/vencidas, alertas enviadas, cuotas cobradas y pendientes, interacciones) y te lo manda por mail.
+
+1. Creá una cuenta gratis en [resend.com](https://resend.com) (hasta 3000 mails/mes sin costo) y generá una **API key** en **API Keys → Create API Key**.
+2. En el repo de GitHub: **Settings → Secrets and variables → Actions → New repository secret**, y cargá dos secrets más (además de los del Paso 7):
+   - `RESEND_API_KEY`
+   - `REPORTE_EMAIL_DESTINO` (el mail donde querés recibir el reporte)
+3. Listo — corre solo todos los lunes. También lo podés disparar a mano desde **Actions** → "Reporte semanal por mail" → **Run workflow**.
+
+Para probarlo en tu PC antes de automatizarlo (o cuando quieras ver un reporte sin esperar al lunes):
+
+```bash
+node scripts/reporte_semanal.mjs --dry-run
+```
+
+Esto genera el PDF como archivo local (no manda mail) para que lo revises. Sin `--dry-run`, genera el PDF y lo envía de verdad.
+
 ## Próximos pasos
 
 - Definir las secuencias de conversación por ramo.
