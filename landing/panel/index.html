@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Panel — Cotizá tu seguro</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛡️</text></svg>">
 <style>
   :root {
     --color-sidebar-bg: #0F172A;
@@ -53,7 +52,6 @@
     border-radius: var(--radius-lg);
     box-shadow: 0 20px 50px rgba(0,0,0,0.25);
   }
-  .card .badge-emoji { font-size: 32px; margin-bottom: 8px; }
   h1 { font-size: 20px; margin: 0 0 4px; }
   h2 { font-size: 17px; margin: 0 0 18px; }
   p.sub { color: var(--color-muted); font-size: 13px; margin-top: 0; }
@@ -88,7 +86,6 @@
     padding: 20px 14px;
   }
   .sidebar-brand { display: flex; align-items: center; gap: 10px; color: #fff; font-weight: 800; font-size: 16px; padding: 6px 10px 22px; }
-  .sidebar-brand .emoji { font-size: 20px; }
   .sidebar-nav { display: flex; flex-direction: column; gap: 2px; flex: 1; }
   .nav-item {
     display: flex; align-items: center; gap: 10px;
@@ -201,7 +198,6 @@
 
   <div id="login-screen" class="center-screen">
     <div class="card">
-      <div class="badge-emoji">🛡️</div>
       <h1>Panel interno</h1>
       <p class="sub">Iniciá sesión para cargar clientes y pólizas.</p>
       <form id="login-form">
@@ -218,7 +214,7 @@
   <div id="panel-screen" style="display:none;">
     <div class="app-shell">
       <aside class="sidebar">
-        <div class="sidebar-brand"><span class="emoji">🛡️</span> <span>Panel</span></div>
+        <div class="sidebar-brand"><span>Panel</span></div>
         <nav class="sidebar-nav">
           <button class="tab-btn nav-item active" data-tab="resumen">
             <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
