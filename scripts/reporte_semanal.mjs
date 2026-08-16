@@ -188,7 +188,8 @@ function generarPdf(datos) {
 }
 
 async function enviarPorMail(pdfBuffer, rango) {
-  const destino = process.env.REPORTE_EMAIL_DESTINO;
+  // Admite uno o varios mails separados por coma (ej: "vos@mail.com, socio@mail.com").
+  const destino = process.env.REPORTE_EMAIL_DESTINO.split(',').map((m) => m.trim()).filter(Boolean);
   const nombreArchivo = `reporte-semanal-${rango.inicioStr}-a-${rango.finStr}.pdf`;
 
   const { data, error } = await resend.emails.send({
@@ -200,7 +201,7 @@ async function enviarPorMail(pdfBuffer, rango) {
   });
 
   if (error) throw new Error(`Error enviando el mail: ${JSON.stringify(error)}`);
-  console.log(`Reporte enviado a ${destino} (id: ${data.id})`);
+  console.log(`Reporte enviado a ${destino.join(', ')} (id: ${data.id})`);
 }
 
 async function main() {

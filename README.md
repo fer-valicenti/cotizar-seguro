@@ -103,7 +103,7 @@ El workflow [`.github/workflows/reporte_semanal.yml`](.github/workflows/reporte_
 1. Creá una cuenta gratis en [resend.com](https://resend.com) (hasta 3000 mails/mes sin costo) y generá una **API key** en **API Keys → Create API Key**.
 2. En el repo de GitHub: **Settings → Secrets and variables → Actions → New repository secret**, y cargá dos secrets más (además de los del Paso 7):
    - `RESEND_API_KEY`
-   - `REPORTE_EMAIL_DESTINO` (el mail donde querés recibir el reporte)
+   - `REPORTE_EMAIL_DESTINO` (el mail donde querés recibir el reporte — si querés que le llegue a más de una persona, ej. vos y tu socio PAS, poné los dos mails separados por coma: `vos@mail.com, socio@mail.com`)
 3. Listo — corre solo todos los lunes. También lo podés disparar a mano desde **Actions** → "Reporte semanal por mail" → **Run workflow**.
 
 Para probarlo en tu PC antes de automatizarlo (o cuando quieras ver un reporte sin esperar al lunes):
