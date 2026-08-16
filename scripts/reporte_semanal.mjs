@@ -187,9 +187,26 @@ function generarPdf(datos) {
   });
 }
 
+// El reporte le llega a todos los que tienen usuario creado para entrar al
+// panel (Supabase Auth) — así, al crearle acceso a otro PAS/gestor, empieza a
+// recibirlo solo, sin tocar nada más. REPORTE_EMAIL_DESTINO es opcional y solo
+// hace falta para sumar mails extra de gente que no usa el panel.
+async function obtenerDestinatarios() {
+  const { data, error } = await supabase.auth.admin.listUsers();
+  if (error) throw new Error(`Error obteniendo los usuarios del panel: ${error.message}`);
+
+  const emailsPanel = data.users.map((u) => u.email).filter(Boolean);
+  const extras = (process.env.REPORTE_EMAIL_DESTINO || '').split(',').map((m) => m.trim()).filter(Boolean);
+  const destinatarios = [...new Set([...emailsPanel, ...extras])];
+
+  if (!destinatarios.length) {
+    throw new Error('No hay ningún destinatario para el reporte (ni usuarios del panel ni REPORTE_EMAIL_DESTINO).');
+  }
+  return destinatarios;
+}
+
 async function enviarPorMail(pdfBuffer, rango) {
-  // Admite uno o varios mails separados por coma (ej: "vos@mail.com, socio@mail.com").
-  const destino = process.env.REPORTE_EMAIL_DESTINO.split(',').map((m) => m.trim()).filter(Boolean);
+  const destino = await obtenerDestinatarios();
   const nombreArchivo = `reporte-semanal-${rango.inicioStr}-a-${rango.finStr}.pdf`;
 
   const { data, error } = await resend.emails.send({
@@ -213,7 +230,9 @@ async function main() {
   if (dryRun) {
     const archivo = `reporte-semanal-preview-${datos.rango.inicioStr}-a-${datos.rango.finStr}.pdf`;
     writeFileSync(archivo, pdfBuffer);
+    const destinatarios = await obtenerDestinatarios();
     console.log(`Reporte guardado localmente en "${archivo}" (no se envió mail).`);
+    console.log(`Se le mandaría a: ${destinatarios.join(', ')}`);
     return;
   }
 

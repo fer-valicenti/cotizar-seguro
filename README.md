@@ -98,12 +98,12 @@ Ojo con los números de póliza puramente numéricos en Excel: si la columna no 
 
 ## Paso 11 — Reporte semanal por mail (Resend)
 
-El workflow [`.github/workflows/reporte_semanal.yml`](.github/workflows/reporte_semanal.yml) arma automáticamente, todos los lunes a las 8am (hora Argentina), un PDF con toda la actividad de la semana (clientes nuevos, pólizas nuevas/renovadas/canceladas/vencidas, alertas enviadas, cuotas cobradas y pendientes, interacciones) y te lo manda por mail.
+El workflow [`.github/workflows/reporte_semanal.yml`](.github/workflows/reporte_semanal.yml) arma automáticamente, todos los lunes a las 8am (hora Argentina), un PDF con toda la actividad de la semana (clientes nuevos, pólizas nuevas/renovadas/canceladas/vencidas, alertas enviadas, cuotas cobradas y pendientes, interacciones) y se lo manda por mail a **todos los que tienen usuario para entrar al panel** (Authentication → Users en Supabase). Si mañana le creás acceso a otro PAS o gestor, empieza a recibirlo solo, sin tocar nada de esto.
 
 1. Creá una cuenta gratis en [resend.com](https://resend.com) (hasta 3000 mails/mes sin costo) y generá una **API key** en **API Keys → Create API Key**.
-2. En el repo de GitHub: **Settings → Secrets and variables → Actions → New repository secret**, y cargá dos secrets más (además de los del Paso 7):
+2. En el repo de GitHub: **Settings → Secrets and variables → Actions → New repository secret**, y cargá:
    - `RESEND_API_KEY`
-   - `REPORTE_EMAIL_DESTINO` (el mail donde querés recibir el reporte — si querés que le llegue a más de una persona, ej. vos y tu socio PAS, poné los dos mails separados por coma: `vos@mail.com, socio@mail.com`)
+   - `REPORTE_EMAIL_DESTINO` — opcional: solo hace falta si querés sumar algún mail extra que no tenga usuario en el panel. Podés poner varios separados por coma (`mail1@x.com, mail2@x.com`), o dejarlo vacío/sin crear si con los usuarios del panel alcanza.
 3. Listo — corre solo todos los lunes. También lo podés disparar a mano desde **Actions** → "Reporte semanal por mail" → **Run workflow**.
 
 Para probarlo en tu PC antes de automatizarlo (o cuando quieras ver un reporte sin esperar al lunes):
