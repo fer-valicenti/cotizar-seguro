@@ -467,7 +467,17 @@
         track.appendChild(item);
       });
 
+      // Hay que hacerlo visible ANTES de medir el ancho — con display:none
+      // el navegador mide 0px y la duración calculada abajo sale mal.
       document.getElementById('marquee-wrap').style.display = 'block';
+
+      // Velocidad constante (px/seg) en vez de duración fija — así, sin
+      // importar cuántas aseguradoras haya cargadas, siempre se desliza al
+      // mismo ritmo pausado en vez de acelerarse con más nombres.
+      const VELOCIDAD_PX_POR_SEG = 40;
+      const anchoBloque = track.scrollWidth / 2;
+      const duracionSeg = Math.max(anchoBloque / VELOCIDAD_PX_POR_SEG, 18);
+      track.style.animationDuration = `${duracionSeg}s`;
     }
     cargarAseguradoras();
 
