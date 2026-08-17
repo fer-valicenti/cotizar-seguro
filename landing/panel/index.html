@@ -78,6 +78,7 @@
     background: #fff;
     color: var(--color-text);
     font-family: inherit;
+    transition: border-color 0.15s, box-shadow 0.15s;
   }
   input:focus, select:focus { outline: none; border-color: var(--color-primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.12); }
   button { padding: 12px; border: none; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; }
@@ -99,7 +100,15 @@
     padding: 20px 14px;
   }
   .sidebar-brand { display: flex; align-items: center; gap: 10px; color: #fff; font-weight: 800; font-size: 16px; padding: 6px 10px 22px; }
-  .sidebar-nav { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+  .sidebar-nav { display: flex; flex-direction: column; gap: 2px; flex: 1; position: relative; }
+  .nav-indicator {
+    position: absolute;
+    background: var(--color-primary);
+    border-radius: 8px;
+    transition: top 0.25s cubic-bezier(0.4,0,0.2,1), left 0.25s cubic-bezier(0.4,0,0.2,1), width 0.25s, height 0.25s;
+    z-index: 0;
+    pointer-events: none;
+  }
   .nav-item {
     display: flex; align-items: center; gap: 10px;
     background: none; border: none; text-align: left;
@@ -107,9 +116,12 @@
     padding: 10px 12px; border-radius: 8px;
     font-size: 13.5px; font-weight: 600;
     cursor: pointer; width: 100%;
+    position: relative; z-index: 1;
+    transition: color 0.15s;
   }
   .nav-item:hover { background: var(--color-sidebar-hover); color: #fff; }
-  .nav-item.active { background: var(--color-primary); color: #fff; }
+  .nav-item.active { color: #fff; }
+  .nav-item.active:hover { background: none; }
   .nav-badge { margin-left: auto; background: #EF4444; color: #fff; font-size: 10.5px; font-weight: 800; padding: 1px 6px; border-radius: 20px; display: none; }
   .sidebar-footer { border-top: 1px solid var(--color-sidebar-hover); padding-top: 12px; margin-top: 12px; }
 
@@ -127,10 +139,31 @@
 
   /* ---------- Stat cards (Resumen) ---------- */
   .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
-  .stat-card { background: var(--color-bg); border-radius: var(--radius); padding: 18px; }
+  .stat-card {
+    background: var(--color-bg); border-radius: var(--radius); padding: 18px;
+    border: 1px solid transparent;
+    transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+  }
+  .stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(15,23,42,0.06), 0 16px 28px -14px rgba(15,23,42,0.18);
+    border-color: var(--color-border);
+  }
   .stat-icon { width: 34px; height: 34px; border-radius: 9px; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; }
   .stat-value { font-size: 26px; font-weight: 800; line-height: 1; }
   .stat-label { color: var(--color-muted); font-size: 12.5px; font-weight: 600; margin-top: 4px; }
+
+  /* ---------- Gráfico "Pólizas por ramo" ---------- */
+  .chart-card {
+    margin-top: 16px; background: var(--color-bg); border-radius: var(--radius-lg);
+    padding: 20px; display: flex; gap: 24px; align-items: center; flex-wrap: wrap;
+  }
+  .chart-legend { display: flex; flex-direction: column; gap: 2px; font-size: 12.5px; flex: 1; min-width: 170px; }
+  .chart-legend-item { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 8px; cursor: pointer; transition: background 0.15s; }
+  .chart-legend-item:hover, .chart-legend-item.active { background: #fff; }
+  .chart-legend-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+  .chart-legend-count { margin-left: auto; color: var(--color-muted); }
+  .chart-donut-seg { cursor: pointer; transition: stroke-width 0.15s; }
 
   /* ---------- Alertas ---------- */
   .alerta-item { border: 1.5px solid var(--color-border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 10px; }
@@ -164,11 +197,49 @@
   .combo-empty { padding: 10px 12px; font-size: 13px; color: var(--color-muted); }
 
   /* ---------- Clientes ---------- */
-  .cliente-item { border: 1.5px solid var(--color-border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 10px; }
+  .cliente-item { border: 1.5px solid var(--color-border); border-radius: var(--radius-lg); padding: 16px 18px; margin-bottom: 10px; transition: box-shadow 0.15s, border-color 0.15s; }
+  .cliente-item:hover { box-shadow: 0 4px 8px rgba(15,23,42,0.04), 0 12px 24px -14px rgba(15,23,42,0.16); border-color: #F1F5F9; }
   .cliente-item .nombre { font-weight: 700; font-size: 14px; }
-  .cliente-item .telefono { color: var(--color-muted); font-size: 12.5px; margin-bottom: 10px; }
-  .poliza-badge { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-top: 1px solid var(--color-border); font-size: 12.5px; flex-wrap: wrap; }
+  .cliente-item .telefono { color: var(--color-muted); font-size: 12.5px; }
+  .cliente-avatar {
+    width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
+    background: var(--color-sidebar-bg); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 12.5px;
+  }
+  .cliente-quien { display: flex; align-items: center; gap: 12px; }
+  .menu-wrap { position: relative; }
+  .btn-menu {
+    background: #fff; border: 1.5px solid var(--color-border); color: var(--color-muted);
+    width: 30px; height: 30px; border-radius: 9px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .btn-menu:hover { border-color: var(--color-primary); color: var(--color-primary); }
+  .dropdown-menu {
+    display: none; position: absolute; top: calc(100% + 4px); right: 0;
+    background: #fff; border: 1.5px solid var(--color-border); border-radius: 10px;
+    box-shadow: 0 10px 28px rgba(15,23,42,0.14); min-width: 160px; z-index: 15; overflow: hidden;
+  }
+  .dropdown-menu.open { display: block; }
+  .dropdown-menu button {
+    display: block; width: 100%; text-align: left; background: none; border: none;
+    padding: 10px 14px; font-size: 12.5px; font-weight: 600; color: var(--color-text);
+    cursor: pointer; border-radius: 0;
+  }
+  .dropdown-menu button:hover { background: var(--color-bg); }
+  .ramo-icon-box {
+    width: 30px; height: 30px; border-radius: 9px; flex-shrink: 0;
+    background: var(--color-info-bg); color: var(--color-info-text);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .ramo-icon-box svg.icon { width: 16px; height: 16px; }
+  .poliza-badge { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid #F1F5F9; font-size: 12.5px; flex-wrap: wrap; }
   .poliza-badge:first-of-type { border-top: none; }
+  .cuotas-panel { overflow: hidden; max-height: 0; transition: max-height 0.25s ease; }
+  .cuotas-panel.open { max-height: 400px; }
+  .btn-chevron { background: none; border: none; color: var(--color-muted); cursor: pointer; display: flex; align-items: center; padding: 4px; }
+  .btn-chevron svg.icon { width: 15px; height: 15px; transition: transform 0.2s; }
+  .btn-chevron.open svg.icon { transform: rotate(180deg); }
   .estado-pill { padding: 3px 9px; border-radius: 20px; font-weight: 700; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.02em; }
   .estado-activa { background: var(--color-success-bg); color: var(--color-success-text); }
   .estado-vencida { background: var(--color-warning-bg); color: var(--color-warning-text); }
@@ -177,8 +248,10 @@
   .sin-polizas { color: var(--color-muted); font-size: 12.5px; font-style: italic; }
 
   .cliente-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
-  .btn-editar { background: #fff; border: 1.5px solid var(--color-border); color: var(--color-primary); font-size: 11.5px; font-weight: 700; padding: 5px 10px; border-radius: 6px; cursor: pointer; white-space: nowrap; }
+  .btn-editar { background: #fff; border: 1.5px solid var(--color-border); color: var(--color-primary); font-size: 11.5px; font-weight: 700; padding: 5px 10px; border-radius: 6px; cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 3px; }
   .btn-editar:hover { border-color: var(--color-primary); }
+  .btn-editar svg.icon { width: 12px; height: 12px; transition: transform 0.2s; }
+  .btn-editar.open svg.icon { transform: rotate(180deg); }
   .poliza-badge .acciones-poliza { display: flex; gap: 6px; margin-left: auto; align-items: center; flex-wrap: wrap; }
   .poliza-badge select { width: auto; padding: 4px 8px; font-size: 11.5px; margin: 0; }
 
@@ -224,6 +297,26 @@
   .interaccion-form input { flex: 1; min-width: 120px; padding: 6px 8px; font-size: 11.5px; }
   .interaccion-form button { padding: 6px 10px; font-size: 11.5px; background: var(--color-primary); color: #fff; }
 
+  /* ---------- Toasts ---------- */
+  #toast-container { position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 8px; z-index: 100; }
+  .toast {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--color-sidebar-bg); color: #fff;
+    border-radius: 12px; padding: 12px 16px;
+    font-size: 13px; font-weight: 600;
+    box-shadow: 0 10px 24px rgba(15,23,42,0.3);
+    opacity: 0; transform: translateY(8px);
+    transition: opacity 0.2s, transform 0.2s;
+    max-width: 320px;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast-icon { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .toast-success .toast-icon { background: #14532D; }
+  .toast-success .toast-icon svg.icon { color: #4ADE80; }
+  .toast-error .toast-icon { background: #7F1D1D; }
+  .toast-error .toast-icon svg.icon { color: #FCA5A5; }
+  .toast svg.icon { width: 12px; height: 12px; }
+
   @media (max-width: 860px) {
     .stats-grid { grid-template-columns: repeat(2, 1fr); }
   }
@@ -265,6 +358,7 @@
       <aside class="sidebar">
         <div class="sidebar-brand"><span>Panel</span></div>
         <nav class="sidebar-nav">
+          <div class="nav-indicator" id="nav-indicator"></div>
           <button class="tab-btn nav-item active" data-tab="resumen">
             <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
             <span class="label-text">Resumen</span>
@@ -334,7 +428,8 @@
                 <div class="stat-label">Cuotas por cobrar</div>
               </div>
             </div>
-            <p class="empty-msg">Usá el menú de la izquierda para revisar las alertas de hoy, cargar clientes o pólizas.</p>
+            <p style="font-size:11px;text-transform:uppercase;letter-spacing:.03em;color:var(--color-muted);font-weight:700;margin:22px 0 0;">Pólizas por ramo</p>
+            <div id="grafico-ramos-wrap"><p class="empty-msg">Cargando...</p></div>
           </section>
 
           <section id="tab-alertas" style="display:none;">
@@ -505,6 +600,7 @@
         </main>
       </div>
     </div>
+    <div id="toast-container"></div>
   </div>
 
   <script type="module">
@@ -514,6 +610,60 @@
     const SUPABASE_URL = 'https://gnanlhiuygpepewgksnp.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImduYW5saGl1eWdwZXBld2drc25wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY1Njc0MjksImV4cCI6MjEwMjE0MzQyOX0.JSv3FC8jliDV_ZdDL_CkCXoBXbeSg0KzeABSJ9kG2FU';
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // ---------- Toasts ----------
+    function mostrarToast(mensaje, tipo = 'success') {
+      const cont = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${tipo}`;
+      const icono = tipo === 'error'
+        ? '<path d="M18 6 6 18M6 6l12 12"></path>'
+        : '<polyline points="20 6 9 17 4 12"></polyline>';
+      toast.innerHTML = `
+        <span class="toast-icon"><svg class="icon" viewBox="0 0 24 24">${icono}</svg></span>
+        <span></span>
+      `;
+      toast.querySelector('span:last-child').textContent = mensaje;
+      cont.appendChild(toast);
+      setTimeout(() => toast.classList.add('show'), 10);
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 250);
+      }, 2800);
+    }
+
+    // ---------- Indicador animado del menú lateral ----------
+    function moverIndicadorNav(btn) {
+      const indicator = document.getElementById('nav-indicator');
+      const nav = document.querySelector('.sidebar-nav');
+      if (!btn || !indicator || !nav) return;
+      const navRect = nav.getBoundingClientRect();
+      const btnRect = btn.getBoundingClientRect();
+      indicator.style.width = btnRect.width + 'px';
+      indicator.style.height = btnRect.height + 'px';
+      indicator.style.top = (btnRect.top - navRect.top) + 'px';
+      indicator.style.left = (btnRect.left - navRect.left) + 'px';
+    }
+    window.addEventListener('resize', () => {
+      const activo = document.querySelector('.nav-item.active');
+      if (activo) moverIndicadorNav(activo);
+    });
+
+    // ---------- Íconos por ramo (mismos trazos que la landing) ----------
+    const RAMO_ICONOS = {
+      'Vehiculo': '<rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle>',
+      'Hogar': '<path d="M3 12l9-9 9 9"></path><path d="M5 10v10a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-6h4v6a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1V10"></path>',
+      'Accidentes Personales': '<path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>',
+      'Comercio': '<rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>',
+      'Vida': '<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>',
+      'Otros': '<line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>',
+    };
+    function iconoRamo(nombre) {
+      return RAMO_ICONOS[nombre] || RAMO_ICONOS['Otros'];
+    }
+    function inicialesCliente(nombre, apellido) {
+      return `${(nombre || '?')[0] || ''}${(apellido || '')[0] || ''}`.toUpperCase();
+    }
 
     const loginScreen = document.getElementById('login-screen');
     const panelScreen = document.getElementById('panel-screen');
@@ -526,6 +676,7 @@
       if (session) {
         loginScreen.style.display = 'none';
         panelScreen.style.display = 'block';
+        moverIndicadorNav(document.querySelector('.nav-item.active'));
         cargarSelects();
         cargarAlertas();
         cargarResumen();
@@ -566,6 +717,7 @@
       btn.addEventListener('click', () => {
         document.querySelectorAll('.tab-btn').forEach((b) => b.classList.remove('active'));
         btn.classList.add('active');
+        moverIndicadorNav(btn);
         document.querySelectorAll('main section').forEach((s) => s.style.display = 'none');
         document.getElementById(`tab-${btn.dataset.tab}`).style.display = 'block';
         if (btn.dataset.tab === 'resumen') cargarResumen();
@@ -576,6 +728,20 @@
     });
 
     // ---------- Resumen (dashboard) ----------
+    function animarContador(el, valor) {
+      const inicio = Number(el.textContent) || 0;
+      if (valor === inicio) { el.textContent = valor; return; }
+      const pasos = 16;
+      const intervalo = 500 / pasos;
+      let paso = 0;
+      const iv = setInterval(() => {
+        paso++;
+        const avance = Math.min(paso / pasos, 1);
+        el.textContent = Math.round(inicio + (valor - inicio) * (1 - Math.pow(1 - avance, 3)));
+        if (avance >= 1) clearInterval(iv);
+      }, intervalo);
+    }
+
     async function cargarResumen() {
       const [clientesRes, polizasRes, alertasRes, cuotasRes] = await Promise.all([
         supabase.from('clientes').select('*', { count: 'exact', head: true }),
@@ -583,11 +749,83 @@
         supabase.from('alertas').select('*', { count: 'exact', head: true }).eq('estado', 'pendiente'),
         supabase.from('cuotas').select('*', { count: 'exact', head: true }).eq('estado', 'pendiente'),
       ]);
-      document.getElementById('stat-clientes').textContent = clientesRes.count ?? '—';
-      document.getElementById('stat-polizas').textContent = polizasRes.count ?? '—';
-      document.getElementById('stat-alertas').textContent = alertasRes.count ?? '—';
-      document.getElementById('stat-cuotas').textContent = cuotasRes.count ?? '—';
+      animarContador(document.getElementById('stat-clientes'), clientesRes.count ?? 0);
+      animarContador(document.getElementById('stat-polizas'), polizasRes.count ?? 0);
+      animarContador(document.getElementById('stat-alertas'), alertasRes.count ?? 0);
+      animarContador(document.getElementById('stat-cuotas'), cuotasRes.count ?? 0);
       actualizarBadgeAlertas(alertasRes.count ?? 0);
+      cargarGraficoRamos();
+    }
+
+    // ---------- Gráfico "Pólizas por ramo" ----------
+    const COLORES_RAMO = ['#1D4ED8', '#3B82F6', '#93C5FD', '#0EA5A6', '#F59E0B', '#94A3B8'];
+
+    async function cargarGraficoRamos() {
+      const cont = document.getElementById('grafico-ramos-wrap');
+      const { data, error } = await supabase
+        .from('polizas')
+        .select('ramos(nombre)')
+        .eq('estado', 'activa');
+
+      if (error || !data || !data.length) {
+        cont.innerHTML = '<p class="empty-msg">Todavía no hay pólizas activas para graficar.</p>';
+        return;
+      }
+
+      const conteo = new Map();
+      data.forEach((p) => {
+        const nombre = p.ramos?.nombre || 'Otros';
+        conteo.set(nombre, (conteo.get(nombre) || 0) + 1);
+      });
+      const items = [...conteo.entries()]
+        .map(([nombre, cantidad], i) => ({ nombre, cantidad, color: COLORES_RAMO[i % COLORES_RAMO.length] }))
+        .sort((a, b) => b.cantidad - a.cantidad);
+      const total = items.reduce((acc, it) => acc + it.cantidad, 0);
+
+      const R = 58, CIRC = 2 * Math.PI * R;
+      let acumulado = 0;
+      const segmentos = items.map((it, i) => {
+        const largo = (it.cantidad / total) * CIRC;
+        const offset = -acumulado;
+        acumulado += largo;
+        return `<circle class="chart-donut-seg" data-i="${i}" cx="70" cy="70" r="${R}" fill="none" stroke="${it.color}" stroke-width="20"
+          stroke-dasharray="${largo} ${CIRC - largo}" stroke-dashoffset="${offset}" transform="rotate(-90 70 70)"></circle>`;
+      }).join('');
+
+      cont.innerHTML = `
+        <div class="chart-card">
+          <svg width="140" height="140" viewBox="0 0 140 140" style="flex-shrink:0;" id="grafico-ramos-svg">
+            <circle cx="70" cy="70" r="${R}" fill="none" stroke="var(--color-border)" stroke-width="20"></circle>
+            ${segmentos}
+            <text id="grafico-ramos-label" x="70" y="66" text-anchor="middle" font-size="20" font-weight="800" fill="var(--color-text)">${total}</text>
+            <text id="grafico-ramos-sub" x="70" y="82" text-anchor="middle" font-size="9.5" fill="var(--color-muted)">pólizas</text>
+          </svg>
+          <div class="chart-legend" id="grafico-ramos-legend">
+            ${items.map((it, i) => `
+              <div class="chart-legend-item" data-i="${i}">
+                <span class="chart-legend-dot" style="background:${it.color};"></span>
+                ${it.nombre}
+                <span class="chart-legend-count">${it.cantidad}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+
+      const label = document.getElementById('grafico-ramos-label');
+      const sub = document.getElementById('grafico-ramos-sub');
+      const segs = cont.querySelectorAll('.chart-donut-seg');
+      const legs = cont.querySelectorAll('.chart-legend-item');
+      function resaltar(i) {
+        segs.forEach((s) => s.style.strokeWidth = (i !== null && +s.dataset.i === i) ? 24 : 20);
+        legs.forEach((l) => l.classList.toggle('active', i !== null && +l.dataset.i === i));
+        label.textContent = i !== null ? items[i].cantidad : total;
+        sub.textContent = i !== null ? items[i].nombre : 'pólizas';
+      }
+      segs.forEach((s) => s.addEventListener('mouseenter', () => resaltar(+s.dataset.i)));
+      legs.forEach((l) => l.addEventListener('mouseenter', () => resaltar(+l.dataset.i)));
+      document.getElementById('grafico-ramos-svg').addEventListener('mouseleave', () => resaltar(null));
+      legs.forEach((l) => l.addEventListener('mouseleave', () => resaltar(null)));
     }
 
     function actualizarBadgeAlertas(n) {
@@ -693,35 +931,44 @@
       cont.innerHTML = lista.map((c) => `
         <div class="cliente-item">
           <div class="cliente-header">
-            <div>
-              <div class="nombre">${c.nombre} ${c.apellido}</div>
-              <div class="telefono">${c.telefono}</div>
+            <div class="cliente-quien">
+              <div class="cliente-avatar">${inicialesCliente(c.nombre, c.apellido)}</div>
+              <div>
+                <div class="nombre">${c.nombre} ${c.apellido}</div>
+                <div class="telefono">${c.telefono}</div>
+              </div>
             </div>
-            <div class="acciones-poliza">
-              <button type="button" class="btn-editar" data-ver-interacciones="${c.id}">Interacciones</button>
-              <button type="button" class="btn-editar" data-editar-cliente="${c.id}">Editar</button>
+            <div class="menu-wrap">
+              <button type="button" class="btn-menu" data-menu-toggle="${c.id}" aria-label="Más acciones">
+                <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.5"></circle><circle cx="12" cy="12" r="1.5"></circle><circle cx="12" cy="19" r="1.5"></circle></svg>
+              </button>
+              <div class="dropdown-menu" id="menu-cliente-${c.id}">
+                <button type="button" data-ver-interacciones="${c.id}">Interacciones</button>
+                <button type="button" data-editar-cliente="${c.id}">Editar cliente</button>
+              </div>
             </div>
           </div>
           ${
             c.polizas && c.polizas.length
               ? c.polizas.map((p) => `
                 <div class="poliza-badge">
+                  <div class="ramo-icon-box"><svg class="icon" viewBox="0 0 24 24">${iconoRamo(p.ramos.nombre)}</svg></div>
                   <span class="estado-pill estado-${p.estado}">${ESTADO_POLIZA_LABEL[p.estado] || p.estado}</span>
                   <span>${p.ramos.nombre}${p.detalle_ramo ? ` (${p.detalle_ramo})` : ''} — ${p.numero_poliza}</span>
                   <div class="acciones-poliza">
                     <select data-poliza-id="${p.id}">
                       ${ESTADOS_POLIZA.map(e => `<option value="${e}" ${e === p.estado ? 'selected' : ''}>${ESTADO_POLIZA_LABEL[e]}</option>`).join('')}
                     </select>
-                    ${p.cantidad_cuotas > 1 ? `<button type="button" class="btn-editar" data-ver-cuotas="${p.id}">Cuotas</button>` : ''}
+                    ${p.cantidad_cuotas > 1 ? `<button type="button" class="btn-editar" data-ver-cuotas="${p.id}">Cuotas <svg class="icon" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg></button>` : ''}
                     ${p.estado === 'activa' || p.estado === 'vencida' ? `<button type="button" class="btn-editar" data-renovar-poliza="${p.id}">Renovar</button>` : ''}
                     <button type="button" class="btn-editar" data-editar-poliza="${p.id}">Editar</button>
                   </div>
                 </div>
-                <div class="cuotas-panel" id="cuotas-panel-${p.id}" style="display:none;"></div>
+                <div class="cuotas-panel" id="cuotas-panel-${p.id}"></div>
               `).join('')
               : '<p class="sin-polizas">Sin pólizas cargadas</p>'
           }
-          <div class="cuotas-panel" id="interacciones-panel-${c.id}" style="display:none;"></div>
+          <div class="cuotas-panel" id="interacciones-panel-${c.id}"></div>
         </div>
       `).join('');
 
@@ -731,12 +978,13 @@
           const nuevoEstado = sel.value;
           const { error } = await supabase.from('polizas').update({ estado: nuevoEstado }).eq('id', id);
           if (error) {
-            alert('Error al actualizar: ' + error.message);
+            mostrarToast('Error al actualizar: ' + error.message, 'error');
             return;
           }
           const pill = sel.closest('.poliza-badge').querySelector('.estado-pill');
           pill.className = `estado-pill estado-${nuevoEstado}`;
           pill.textContent = ESTADO_POLIZA_LABEL[nuevoEstado] || nuevoEstado;
+          mostrarToast(`Póliza marcada como ${(ESTADO_POLIZA_LABEL[nuevoEstado] || nuevoEstado).toLowerCase()}`);
           cargarResumen();
         });
       });
@@ -754,9 +1002,26 @@
         btn.addEventListener('click', () => toggleCuotas(btn.dataset.verCuotas, btn));
       });
       cont.querySelectorAll('[data-ver-interacciones]').forEach((btn) => {
-        btn.addEventListener('click', () => toggleInteracciones(btn.dataset.verInteracciones));
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.dropdown-menu.open').forEach((m) => m.classList.remove('open'));
+          toggleInteracciones(btn.dataset.verInteracciones);
+        });
+      });
+
+      cont.querySelectorAll('[data-menu-toggle]').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const menu = document.getElementById(`menu-cliente-${btn.dataset.menuToggle}`);
+          const yaAbierto = menu.classList.contains('open');
+          document.querySelectorAll('.dropdown-menu.open').forEach((m) => m.classList.remove('open'));
+          if (!yaAbierto) menu.classList.add('open');
+        });
       });
     }
+
+    document.addEventListener('click', () => {
+      document.querySelectorAll('.dropdown-menu.open').forEach((m) => m.classList.remove('open'));
+    });
 
     document.getElementById('clientes-buscar').addEventListener('input', (e) => {
       const q = e.target.value.trim().toLowerCase();
@@ -770,11 +1035,13 @@
     // ---------- Ver / marcar pagadas las cuotas de una póliza ----------
     async function toggleCuotas(polizaId, btn) {
       const panel = document.getElementById(`cuotas-panel-${polizaId}`);
-      if (panel.style.display === 'block') {
-        panel.style.display = 'none';
+      if (panel.classList.contains('open')) {
+        panel.classList.remove('open');
+        btn.classList.remove('open');
         return;
       }
-      panel.style.display = 'block';
+      panel.classList.add('open');
+      btn.classList.add('open');
       panel.innerHTML = 'Cargando cuotas...';
 
       const { data, error } = await supabase
@@ -803,11 +1070,12 @@
           const id = b.dataset.cuotaId;
           const { error } = await supabase.from('cuotas').update({ estado: 'pagada', fecha_pago: new Date().toISOString().slice(0, 10) }).eq('id', id);
           if (error) {
-            alert('Error al marcar como pagada: ' + error.message);
+            mostrarToast('Error al marcar como pagada: ' + error.message, 'error');
             return;
           }
           b.disabled = true;
           b.textContent = 'Pagada ✓';
+          mostrarToast('Cuota marcada como pagada');
           cargarResumen();
         });
       });
@@ -821,11 +1089,11 @@
 
     async function toggleInteracciones(clienteId) {
       const panel = document.getElementById(`interacciones-panel-${clienteId}`);
-      if (panel.style.display === 'block') {
-        panel.style.display = 'none';
+      if (panel.classList.contains('open')) {
+        panel.classList.remove('open');
         return;
       }
-      panel.style.display = 'block';
+      panel.classList.add('open');
       await recargarInteracciones(clienteId);
     }
 
@@ -874,9 +1142,10 @@
 
         const { error } = await supabase.from('interacciones').insert({ cliente_id: clienteId, tipo, resultado, mensaje });
         if (error) {
-          alert('Error al registrar: ' + error.message);
+          mostrarToast('Error al registrar: ' + error.message, 'error');
           return;
         }
+        mostrarToast('Interacción registrada');
         recargarInteracciones(clienteId);
       });
     }
@@ -1699,6 +1968,9 @@
             btn.disabled = true;
             btn.textContent = 'Enviada ✓';
             actualizarBadgeAlertas(cont.querySelectorAll('.alerta-item:not(.enviada)').length);
+            mostrarToast('Alerta marcada como enviada');
+          } else {
+            mostrarToast('Error al marcar la alerta: ' + error.message, 'error');
           }
         });
       });
