@@ -201,6 +201,19 @@
   .banner-edicion { background: #FFFBEB; border: 1.5px solid #FDE68A; color: #92400E; border-radius: 8px; padding: 10px 14px; font-size: 12.5px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
   .banner-edicion button { background: none; border: none; text-decoration: underline; color: var(--color-primary-dark); font-size: 12px; cursor: pointer; padding: 2px; font-weight: 700; }
 
+  /* ---------- Importar Excel ---------- */
+  #importar-archivo { margin-top: 14px; margin-bottom: 6px; }
+  #importar-confirmar-btn { margin-top: 16px; }
+  .import-resumen-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin: 16px 0; }
+  .import-resumen-grid > div { background: var(--color-bg); border-radius: var(--radius); padding: 12px 8px; text-align: center; }
+  .import-resumen-grid strong { display: block; font-size: 19px; color: var(--color-text); }
+  .import-resumen-grid span { font-size: 10.5px; color: var(--color-muted); text-transform: uppercase; letter-spacing: 0.02em; }
+  .import-preview { max-height: 320px; overflow-y: auto; border: 1.5px solid var(--color-border); border-radius: var(--radius); }
+  .import-preview:empty { display: none; }
+  .import-row { padding: 8px 12px; font-size: 12.5px; border-bottom: 1px solid var(--color-border); }
+  .import-row:last-child { border-bottom: none; }
+  .import-row-error { color: var(--color-danger-text); background: var(--color-danger-bg); }
+
   .interaccion-item { border-bottom: 1px solid var(--color-border); padding: 6px 0; font-size: 12px; }
   .interaccion-item:last-child { border-bottom: none; }
   .interaccion-item .tipo-resultado { font-weight: 700; color: var(--color-primary); }
@@ -225,6 +238,7 @@
     main section { padding: 18px; }
     .row2 { grid-template-columns: 1fr; }
     .stats-grid { grid-template-columns: 1fr 1fr; }
+    .import-resumen-grid { grid-template-columns: 1fr 1fr; }
   }
 </style>
 </head>
@@ -270,6 +284,10 @@
           <button class="tab-btn nav-item" data-tab="poliza">
             <svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
             <span class="label-text">Nueva póliza</span>
+          </button>
+          <button class="tab-btn nav-item" data-tab="importar">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <span class="label-text">Importar Excel</span>
           </button>
         </nav>
         <div class="sidebar-footer">
@@ -462,6 +480,25 @@
               <div class="error" id="poliza-error"></div>
               <div class="ok" id="poliza-ok">Póliza guardada — las cuotas (si corresponde) se generaron solas ✓</div>
             </form>
+          </section>
+
+          <section id="tab-importar" style="display:none;">
+            <h2>Importar cartera desde Excel</h2>
+            <p class="sub">
+              Subí un archivo .xlsx o .csv con una fila por póliza. Columnas esperadas: Nombre, Apellido,
+              Telefono, Email, DNI_CUIT, Fecha_Nacimiento, Ramo, Detalle_Ramo, Numero_Poliza, Aseguradora,
+              Productor, Fecha_Inicio_Vigencia, Fecha_Vencimiento, Prima, Forma_Pago. Si un cliente tiene
+              varias pólizas, repetí sus datos en cada fila — se reconoce por teléfono y no se duplica.
+            </p>
+
+            <input type="file" id="importar-archivo" accept=".xlsx,.xls,.csv">
+
+            <div id="importar-resumen" style="display:none;"></div>
+            <div id="importar-preview" class="import-preview"></div>
+
+            <button type="button" class="primary" id="importar-confirmar-btn" style="display:none;">Confirmar importación</button>
+            <div class="error" id="importar-error" style="display:none;"></div>
+            <div class="ok" id="importar-ok" style="display:none;"></div>
           </section>
 
         </main>
@@ -1313,6 +1350,293 @@
       salirModoEdicionPoliza();
       if (estabaEditandoOrenovando) cargarClientes();
       cargarResumen();
+    });
+
+    // ---------- Importar cartera desde Excel ----------
+    // Misma lógica que scripts/importar_cartera.mjs, adaptada para correr en
+    // el navegador con la sesión del panel (en vez de la service role key).
+    const MESES_POR_CUOTA_IMPORT = { mensual: 1, debito_automatico: 1, trimestral: 3, semestral: 6, anual: 12, contado: null };
+
+    function mesesEntreImport(inicio, fin) {
+      let meses = (fin.getFullYear() - inicio.getFullYear()) * 12 + (fin.getMonth() - inicio.getMonth());
+      if (fin.getDate() < inicio.getDate()) meses -= 1;
+      return Math.max(meses, 0);
+    }
+
+    function calcularCuotasImport(formaPago, inicioIso, vencimientoIso) {
+      const mesesPorCuota = MESES_POR_CUOTA_IMPORT[(formaPago || 'contado').trim()];
+      if (!mesesPorCuota) return 1;
+      const meses = mesesEntreImport(new Date(inicioIso), new Date(vencimientoIso));
+      return Math.max(Math.round(meses / mesesPorCuota), 1);
+    }
+
+    function normalizarTelefonoImport(valor) {
+      return String(valor || '').replace(/[^\d]/g, '');
+    }
+
+    // Admite "YYYY-MM-DD", "DD/MM/YYYY", un Date ya parseado, o el número de
+    // serie de fecha de Excel.
+    function parsearFechaAIsoImport(valor) {
+      if (!valor && valor !== 0) return null;
+
+      if (typeof valor === 'number') {
+        const { y, m, d } = XLSX.SSF.parse_date_code(valor);
+        return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}T12:00:00-03:00`;
+      }
+      if (valor instanceof Date) {
+        const y = valor.getUTCFullYear();
+        const m = String(valor.getUTCMonth() + 1).padStart(2, '0');
+        const d = String(valor.getUTCDate()).padStart(2, '0');
+        return `${y}-${m}-${d}T12:00:00-03:00`;
+      }
+
+      const str = String(valor).trim();
+      const isoMatch = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (isoMatch) return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}T12:00:00-03:00`;
+
+      const arMatch = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      if (arMatch) {
+        const [, d, m, y] = arMatch;
+        return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}T12:00:00-03:00`;
+      }
+      return null;
+    }
+
+    // Corre dos veces: primero con dryRun=true (solo valida, para la vista
+    // previa) y de nuevo con dryRun=false cuando se confirma (recién ahí
+    // escribe en la base) — así la vista previa siempre refleja el estado
+    // real justo antes de importar.
+    async function procesarImportacion(filas, dryRun) {
+      const { data: ramos } = await supabase.from('ramos').select('id, nombre');
+      const ramoIdPorNombre = new Map((ramos || []).map((r) => [r.nombre.toLowerCase(), r.id]));
+
+      const cacheAseguradoras = new Map();
+      const { data: aseguradorasExistentes } = await supabase.from('aseguradoras').select('id, nombre');
+      (aseguradorasExistentes || []).forEach((a) => cacheAseguradoras.set(a.nombre.toLowerCase(), a.id));
+
+      const cacheProductores = new Map();
+      const { data: productoresExistentes } = await supabase.from('productores').select('id, nombre');
+      (productoresExistentes || []).forEach((p) => cacheProductores.set(p.nombre.toLowerCase(), p.id));
+
+      const cacheClientes = new Map();
+      const { data: clientesExistentes } = await supabase.from('clientes').select('id, telefono');
+      (clientesExistentes || []).forEach((c) => cacheClientes.set(normalizarTelefonoImport(c.telefono), c.id));
+
+      const { data: polizasExistentes } = await supabase.from('polizas').select('numero_poliza');
+      const numerosPolizaExistentes = new Set((polizasExistentes || []).map((p) => p.numero_poliza));
+
+      let clientesCreados = 0;
+      let clientesReutilizados = 0;
+      let polizasCreadas = 0;
+      const detalle = [];
+
+      for (let i = 0; i < filas.length; i++) {
+        const fila = filas[i];
+        const nFila = i + 2; // +2: fila 1 es el encabezado, y las planillas empiezan en 1
+
+        try {
+          const nombre = String(fila.Nombre || '').trim();
+          const apellido = String(fila.Apellido || '').trim();
+          const telefono = normalizarTelefonoImport(fila.Telefono);
+          const ramoNombre = String(fila.Ramo || '').trim();
+          const numeroPoliza = String(fila.Numero_Poliza || '').trim();
+          const fechaInicio = parsearFechaAIsoImport(fila.Fecha_Inicio_Vigencia);
+          const fechaVencimiento = parsearFechaAIsoImport(fila.Fecha_Vencimiento);
+
+          if (!nombre || !apellido || !telefono) throw new Error('Faltan Nombre, Apellido o Telefono');
+          if (!ramoNombre) throw new Error('Falta Ramo');
+          if (!numeroPoliza) throw new Error('Falta Numero_Poliza');
+          if (!fechaInicio || !fechaVencimiento) throw new Error('Fecha_Inicio_Vigencia o Fecha_Vencimiento inválida (usar AAAA-MM-DD o DD/MM/AAAA)');
+
+          const ramoId = ramoIdPorNombre.get(ramoNombre.toLowerCase());
+          if (!ramoId) throw new Error(`Ramo "${ramoNombre}" no existe. Válidos: ${[...ramoIdPorNombre.keys()].join(', ')}`);
+
+          if (numerosPolizaExistentes.has(numeroPoliza)) throw new Error(`Numero_Poliza "${numeroPoliza}" ya existe en la base`);
+
+          let aseguradoraId = null;
+          const aseguradoraNombre = String(fila.Aseguradora || '').trim();
+          if (aseguradoraNombre) {
+            aseguradoraId = cacheAseguradoras.get(aseguradoraNombre.toLowerCase());
+            if (!aseguradoraId) {
+              if (!dryRun) {
+                const { data, error } = await supabase.from('aseguradoras').insert({ nombre: aseguradoraNombre }).select().single();
+                if (error) throw error;
+                aseguradoraId = data.id;
+              }
+              cacheAseguradoras.set(aseguradoraNombre.toLowerCase(), aseguradoraId || 'dry-run');
+            }
+          }
+
+          let productorId = null;
+          const productorNombre = String(fila.Productor || '').trim();
+          if (productorNombre) {
+            productorId = cacheProductores.get(productorNombre.toLowerCase());
+            if (!productorId) {
+              if (!dryRun) {
+                const { data, error } = await supabase.from('productores').insert({ nombre: productorNombre }).select().single();
+                if (error) throw error;
+                productorId = data.id;
+              }
+              cacheProductores.set(productorNombre.toLowerCase(), productorId || 'dry-run');
+            }
+          }
+
+          let clienteId = cacheClientes.get(telefono);
+          let clienteEsNuevo = false;
+          if (!clienteId) {
+            clienteEsNuevo = true;
+            if (!dryRun) {
+              const { data, error } = await supabase.from('clientes').insert({
+                nombre, apellido, telefono,
+                email: String(fila.Email || '').trim() || null,
+                dni_cuit: String(fila.DNI_CUIT || '').trim() || null,
+                fecha_nacimiento: parsearFechaAIsoImport(fila.Fecha_Nacimiento)?.slice(0, 10) || null,
+                origen_lead: 'cartera PAS',
+              }).select().single();
+              if (error) throw error;
+              clienteId = data.id;
+            } else {
+              clienteId = 'dry-run';
+            }
+            cacheClientes.set(telefono, clienteId);
+            clientesCreados++;
+          } else {
+            clientesReutilizados++;
+          }
+
+          const formaPago = String(fila.Forma_Pago || 'contado').trim();
+          const cantidadCuotas = calcularCuotasImport(formaPago, fechaInicio, fechaVencimiento);
+
+          if (!dryRun) {
+            const { error } = await supabase.from('polizas').insert({
+              cliente_id: clienteId,
+              ramo_id: ramoId,
+              detalle_ramo: String(fila.Detalle_Ramo || '').trim() || null,
+              aseguradora_id: aseguradoraId,
+              productor_id: productorId,
+              numero_poliza: numeroPoliza,
+              fecha_inicio_vigencia: fechaInicio,
+              fecha_vencimiento: fechaVencimiento,
+              prima: fila.Prima || null,
+              cantidad_cuotas: cantidadCuotas,
+              forma_pago: formaPago,
+              estado: 'activa',
+            });
+            if (error) throw error;
+          }
+          numerosPolizaExistentes.add(numeroPoliza);
+          polizasCreadas++;
+
+          detalle.push({
+            fila: nFila, ok: true,
+            mensaje: `${nombre} ${apellido} — ${ramoNombre} (${numeroPoliza})${clienteEsNuevo ? '' : ' [cliente ya existía]'}${cantidadCuotas > 1 ? ` — ${cantidadCuotas} cuotas` : ''}`,
+          });
+        } catch (err) {
+          detalle.push({ fila: nFila, ok: false, mensaje: err.message });
+        }
+      }
+
+      return {
+        detalle,
+        resumen: { total: filas.length, clientesCreados, clientesReutilizados, polizasCreadas, errores: detalle.filter((d) => !d.ok).length },
+      };
+    }
+
+    function renderPreviewImportacion({ resumen, detalle }, dryRun) {
+      const resumenEl = document.getElementById('importar-resumen');
+      resumenEl.style.display = 'block';
+      resumenEl.innerHTML = `
+        <div class="import-resumen-grid">
+          <div><strong>${resumen.total}</strong><span>Filas</span></div>
+          <div><strong>${resumen.clientesCreados}</strong><span>Clientes nuevos</span></div>
+          <div><strong>${resumen.clientesReutilizados}</strong><span>Clientes existentes</span></div>
+          <div><strong>${resumen.polizasCreadas}</strong><span>Pólizas ${dryRun ? 'a crear' : 'creadas'}</span></div>
+          <div><strong>${resumen.errores}</strong><span>Errores</span></div>
+        </div>
+      `;
+
+      document.getElementById('importar-preview').innerHTML = detalle.map((d) => {
+        const div = document.createElement('div');
+        div.className = `import-row ${d.ok ? '' : 'import-row-error'}`;
+        div.textContent = `Fila ${d.fila}: ${d.ok ? '✓ ' : '✗ '}${d.mensaje}`;
+        return div.outerHTML;
+      }).join('');
+    }
+
+    let filasImportar = null;
+
+    document.getElementById('importar-archivo').addEventListener('change', async (e) => {
+      const archivo = e.target.files[0];
+      const errorEl = document.getElementById('importar-error');
+      const okEl = document.getElementById('importar-ok');
+      const confirmarBtn = document.getElementById('importar-confirmar-btn');
+      errorEl.style.display = 'none';
+      okEl.style.display = 'none';
+      confirmarBtn.style.display = 'none';
+      document.getElementById('importar-resumen').style.display = 'none';
+      document.getElementById('importar-preview').innerHTML = '';
+      filasImportar = null;
+      if (!archivo) return;
+
+      document.getElementById('importar-preview').innerHTML = '<p class="empty-msg">Analizando archivo...</p>';
+
+      try {
+        const buffer = await archivo.arrayBuffer();
+        const libro = XLSX.read(buffer, { type: 'array' });
+        const hoja = libro.Sheets[libro.SheetNames[0]];
+        const filas = XLSX.utils.sheet_to_json(hoja, { defval: '' });
+
+        if (!filas.length) {
+          document.getElementById('importar-preview').innerHTML = '';
+          errorEl.textContent = 'El archivo no tiene filas para importar.';
+          errorEl.style.display = 'block';
+          return;
+        }
+
+        const resultado = await procesarImportacion(filas, true);
+        renderPreviewImportacion(resultado, true);
+
+        if (resultado.resumen.polizasCreadas > 0) {
+          filasImportar = filas;
+          confirmarBtn.style.display = 'inline-flex';
+          confirmarBtn.disabled = false;
+          confirmarBtn.textContent = `Confirmar importación (${resultado.resumen.polizasCreadas} póliza${resultado.resumen.polizasCreadas === 1 ? '' : 's'})`;
+        }
+      } catch (err) {
+        document.getElementById('importar-preview').innerHTML = '';
+        errorEl.textContent = 'Error leyendo el archivo: ' + err.message;
+        errorEl.style.display = 'block';
+      }
+    });
+
+    document.getElementById('importar-confirmar-btn').addEventListener('click', async () => {
+      if (!filasImportar) return;
+      const btn = document.getElementById('importar-confirmar-btn');
+      const errorEl = document.getElementById('importar-error');
+      const okEl = document.getElementById('importar-ok');
+      btn.disabled = true;
+      btn.textContent = 'Importando...';
+      errorEl.style.display = 'none';
+
+      try {
+        const resultado = await procesarImportacion(filasImportar, false);
+        renderPreviewImportacion(resultado, false);
+
+        okEl.textContent = `Listo — ${resultado.resumen.polizasCreadas} póliza(s) importada(s), ${resultado.resumen.clientesCreados} cliente(s) nuevo(s).`;
+        okEl.style.display = 'block';
+        btn.style.display = 'none';
+        document.getElementById('importar-archivo').value = '';
+        filasImportar = null;
+
+        cargarClientes();
+        cargarSelects();
+        cargarResumen();
+      } catch (err) {
+        errorEl.textContent = 'Error importando: ' + err.message;
+        errorEl.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'Reintentar importación';
+      }
     });
 
     // ---------- Alertas de hoy ----------

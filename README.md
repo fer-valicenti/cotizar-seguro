@@ -80,9 +80,15 @@ Mini app con login para cargar clientes y pólizas sin usar Table Editor de Supa
 
 El panel no permite borrar registros (a propósito, como medida de seguridad) — eso se sigue haciendo desde Table Editor.
 
+Desde la pestaña **Clientes** del panel podés bajar toda la cartera actual a un .xlsx con el botón **Exportar a Excel** (no hace falta la compu ni la terminal, corre directo en el navegador).
+
 ## Paso 10 — Importar la cartera existente (Excel/CSV)
 
-Para cargar muchos clientes/pólizas de una sola vez en vez de uno por uno:
+Para cargar muchos clientes/pólizas de una sola vez en vez de uno por uno, hay dos formas equivalentes:
+
+**Desde el panel** (más simple, no requiere terminal): pestaña **Importar Excel** → subís el archivo → te muestra una vista previa con qué se va a crear y qué filas tienen error → **Confirmar importación**.
+
+**Desde la terminal** (para cargas grandes o si preferís revisarlo por consola):
 
 1. Completá [`plantilla_cartera.csv`](plantilla_cartera.csv) con tu cartera (una fila por póliza; si un cliente tiene varias, repetí sus datos en cada fila — se reconoce por teléfono y no se duplica). Podés editarla en Excel/Sheets y guardarla como `.csv` o `.xlsx`.
 2. Probá primero sin tocar nada real:
@@ -94,7 +100,7 @@ Para cargar muchos clientes/pólizas de una sola vez en vez de uno por uno:
    node scripts/importar_cartera.mjs tu_archivo.xlsx
    ```
 
-Ojo con los números de póliza puramente numéricos en Excel: si la columna no está formateada como texto, puede perder ceros a la izquierda. Si tenés casos así, formateá esa columna como "Texto" en Excel antes de exportar.
+En los dos casos: ojo con los números de póliza puramente numéricos en Excel — si la columna no está formateada como texto, puede perder ceros a la izquierda. Formateá esa columna como "Texto" en Excel antes de exportar si tenés casos así.
 
 ## Paso 11 — Reporte semanal por mail (Resend)
 
