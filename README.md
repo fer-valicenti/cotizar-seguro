@@ -100,7 +100,10 @@ Para cargar muchos clientes/pólizas de una sola vez en vez de uno por uno, hay 
    node scripts/importar_cartera.mjs tu_archivo.xlsx
    ```
 
-En los dos casos: ojo con los números de póliza puramente numéricos en Excel — si la columna no está formateada como texto, puede perder ceros a la izquierda. Formateá esa columna como "Texto" en Excel antes de exportar si tenés casos así.
+En los dos casos, dos cosas a tener en cuenta:
+
+- **Teléfono**: tiene que empezar con `54` (código de Argentina), como en la plantilla — ej: `5492231234567`, no `2231234567`. Si falta, el link de WhatsApp de ese cliente no va a funcionar, y si ya había entrado antes por la landing (que sí guarda con `54`), se crea un cliente duplicado en vez de reconocerlo. Ambos caminos de importación avisan si detectan un teléfono sin el `54`, pero igual lo cargan — revisá esos casos en la planilla original antes de confirmar.
+- **Números de póliza puramente numéricos** en Excel: si la columna no está formateada como texto, puede perder ceros a la izquierda. Formateá esa columna como "Texto" en Excel antes de exportar si tenés casos así.
 
 ## Paso 11 — Reporte semanal por mail (Resend)
 

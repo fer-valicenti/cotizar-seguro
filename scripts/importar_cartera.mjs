@@ -108,6 +108,7 @@ async function main() {
   let clientesCreados = 0;
   let clientesReutilizados = 0;
   let polizasCreadas = 0;
+  let telefonosSospechosos = 0;
   const errores = [];
 
   for (let i = 0; i < filas.length; i++) {
@@ -124,6 +125,11 @@ async function main() {
       const fechaVencimiento = parsearFechaAIso(fila.Fecha_Vencimiento);
 
       if (!nombre || !apellido || !telefono) throw new Error('Faltan Nombre, Apellido o Telefono');
+      // No lo bloqueamos (podría ser un formato legítimo raro), pero si no
+      // empieza con 54 el link de WhatsApp no va a funcionar y, si ese
+      // cliente ya había entrado por la landing (que sí guarda con 54), se
+      // crearía un duplicado en vez de reconocerlo — mejor avisar.
+      const telefonoSospechoso = !telefono.startsWith('54');
       if (!ramoNombre) throw new Error('Falta Ramo');
       if (!numeroPoliza) throw new Error('Falta Numero_Poliza');
       if (!fechaInicio || !fechaVencimiento) throw new Error('Fecha_Inicio_Vigencia o Fecha_Vencimiento inválida (usar YYYY-MM-DD o DD/MM/YYYY)');
@@ -211,8 +217,9 @@ async function main() {
       }
       numerosPolizaExistentes.add(numeroPoliza);
       polizasCreadas++;
+      if (telefonoSospechoso) telefonosSospechosos++;
 
-      console.log(`✅ Fila ${nFila}: ${nombre} ${apellido} — ${ramoNombre} (${numeroPoliza})${clienteEsNuevo ? '' : ' [cliente ya existía]'}${cantidadCuotas > 1 ? ` — ${cantidadCuotas} cuotas` : ''}`);
+      console.log(`✅ Fila ${nFila}: ${nombre} ${apellido} — ${ramoNombre} (${numeroPoliza})${clienteEsNuevo ? '' : ' [cliente ya existía]'}${cantidadCuotas > 1 ? ` — ${cantidadCuotas} cuotas` : ''}${telefonoSospechoso ? ` ⚠ el teléfono "${telefono}" no empieza con 54` : ''}`);
     } catch (err) {
       errores.push({ fila: nFila, motivo: err.message });
       console.log(`❌ Fila ${nFila}: ${err.message}`);
@@ -223,6 +230,7 @@ async function main() {
   console.log(`Clientes nuevos: ${clientesCreados}`);
   console.log(`Clientes reutilizados (ya existían): ${clientesReutilizados}`);
   console.log(`Pólizas ${dryRun ? 'que se crearían' : 'creadas'}: ${polizasCreadas}`);
+  console.log(`Teléfonos a revisar (no empiezan con 54): ${telefonosSospechosos}`);
   console.log(`Errores: ${errores.length}`);
   if (dryRun) console.log('\nEsto fue un DRY RUN — no se escribió nada en la base. Corré sin --dry-run para importar de verdad.');
 }

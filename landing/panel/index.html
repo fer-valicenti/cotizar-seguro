@@ -204,7 +204,7 @@
   /* ---------- Importar Excel ---------- */
   #importar-archivo { margin-top: 14px; margin-bottom: 6px; }
   #importar-confirmar-btn { margin-top: 16px; }
-  .import-resumen-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin: 16px 0; }
+  .import-resumen-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin: 16px 0; }
   .import-resumen-grid > div { background: var(--color-bg); border-radius: var(--radius); padding: 12px 8px; text-align: center; }
   .import-resumen-grid strong { display: block; font-size: 19px; color: var(--color-text); }
   .import-resumen-grid span { font-size: 10.5px; color: var(--color-muted); text-transform: uppercase; letter-spacing: 0.02em; }
@@ -213,6 +213,7 @@
   .import-row { padding: 8px 12px; font-size: 12.5px; border-bottom: 1px solid var(--color-border); }
   .import-row:last-child { border-bottom: none; }
   .import-row-error { color: var(--color-danger-text); background: var(--color-danger-bg); }
+  .import-row-warning { color: var(--color-warning-text); background: var(--color-warning-bg); }
 
   .interaccion-item { border-bottom: 1px solid var(--color-border); padding: 6px 0; font-size: 12px; }
   .interaccion-item:last-child { border-bottom: none; }
@@ -1444,6 +1445,11 @@
           const fechaVencimiento = parsearFechaAIsoImport(fila.Fecha_Vencimiento);
 
           if (!nombre || !apellido || !telefono) throw new Error('Faltan Nombre, Apellido o Telefono');
+          // No lo bloqueamos (podría ser un formato legítimo raro), pero si no
+          // empieza con 54 el link de WhatsApp no va a funcionar y, si ese
+          // cliente ya había entrado por la landing (que sí guarda con 54),
+          // se crearía un duplicado en vez de reconocerlo — mejor avisar.
+          const telefonoSospechoso = !telefono.startsWith('54');
           if (!ramoNombre) throw new Error('Falta Ramo');
           if (!numeroPoliza) throw new Error('Falta Numero_Poliza');
           if (!fechaInicio || !fechaVencimiento) throw new Error('Fecha_Inicio_Vigencia o Fecha_Vencimiento inválida (usar AAAA-MM-DD o DD/MM/AAAA)');
@@ -1528,8 +1534,9 @@
           polizasCreadas++;
 
           detalle.push({
-            fila: nFila, ok: true,
-            mensaje: `${nombre} ${apellido} — ${ramoNombre} (${numeroPoliza})${clienteEsNuevo ? '' : ' [cliente ya existía]'}${cantidadCuotas > 1 ? ` — ${cantidadCuotas} cuotas` : ''}`,
+            fila: nFila, ok: true, warning: telefonoSospechoso,
+            mensaje: `${nombre} ${apellido} — ${ramoNombre} (${numeroPoliza})${clienteEsNuevo ? '' : ' [cliente ya existía]'}${cantidadCuotas > 1 ? ` — ${cantidadCuotas} cuotas` : ''}` +
+              (telefonoSospechoso ? ` — ⚠ el teléfono "${telefono}" no empieza con 54 (código de Argentina), revisalo o el WhatsApp no va a andar` : ''),
           });
         } catch (err) {
           detalle.push({ fila: nFila, ok: false, mensaje: err.message });
@@ -1538,7 +1545,11 @@
 
       return {
         detalle,
-        resumen: { total: filas.length, clientesCreados, clientesReutilizados, polizasCreadas, errores: detalle.filter((d) => !d.ok).length },
+        resumen: {
+          total: filas.length, clientesCreados, clientesReutilizados, polizasCreadas,
+          errores: detalle.filter((d) => !d.ok).length,
+          advertencias: detalle.filter((d) => d.ok && d.warning).length,
+        },
       };
     }
 
@@ -1551,13 +1562,14 @@
           <div><strong>${resumen.clientesCreados}</strong><span>Clientes nuevos</span></div>
           <div><strong>${resumen.clientesReutilizados}</strong><span>Clientes existentes</span></div>
           <div><strong>${resumen.polizasCreadas}</strong><span>Pólizas ${dryRun ? 'a crear' : 'creadas'}</span></div>
+          <div><strong>${resumen.advertencias}</strong><span>Teléfonos a revisar</span></div>
           <div><strong>${resumen.errores}</strong><span>Errores</span></div>
         </div>
       `;
 
       document.getElementById('importar-preview').innerHTML = detalle.map((d) => {
         const div = document.createElement('div');
-        div.className = `import-row ${d.ok ? '' : 'import-row-error'}`;
+        div.className = `import-row ${!d.ok ? 'import-row-error' : d.warning ? 'import-row-warning' : ''}`;
         div.textContent = `Fila ${d.fila}: ${d.ok ? '✓ ' : '✗ '}${d.mensaje}`;
         return div.outerHTML;
       }).join('');
