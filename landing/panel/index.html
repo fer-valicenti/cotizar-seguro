@@ -129,6 +129,27 @@
   .btn-marcar { background: #fff; color: var(--color-text); border: 1.5px solid var(--color-border); font-size: 12.5px; padding: 8px 12px; border-radius: 7px; }
   .empty-msg { color: var(--color-muted); font-size: 13.5px; text-align: center; padding: 24px 0; }
 
+  /* ---------- Combo buscable (cliente / aseguradora) ---------- */
+  .combo { position: relative; }
+  .combo-list {
+    display: none;
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: #fff;
+    border: 1.5px solid var(--color-border);
+    border-radius: 8px;
+    max-height: 220px;
+    overflow-y: auto;
+    box-shadow: 0 10px 28px rgba(15,23,42,0.14);
+    z-index: 20;
+  }
+  .combo-list.open { display: block; }
+  .combo-option { padding: 10px 12px; font-size: 14px; cursor: pointer; }
+  .combo-option:hover, .combo-option.active { background: var(--color-bg); }
+  .combo-empty { padding: 10px 12px; font-size: 13px; color: var(--color-muted); }
+
   /* ---------- Clientes ---------- */
   .cliente-item { border: 1.5px solid var(--color-border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 10px; }
   .cliente-item .nombre { font-weight: 700; font-size: 14px; }
@@ -340,8 +361,12 @@
               Renovando póliza — al guardar, la anterior pasa sola a "Renovada". <button type="button" id="poliza-cancelar-renovacion">Cancelar</button>
             </div>
             <form id="poliza-form">
-              <label for="p-cliente">Cliente</label>
-              <select id="p-cliente" required><option value="">Cargando...</option></select>
+              <label for="p-cliente-buscar">Cliente</label>
+              <div class="combo">
+                <input type="text" id="p-cliente-buscar" autocomplete="off" placeholder="Escribí para buscar...">
+                <div class="combo-list" id="p-cliente-lista"></div>
+                <select id="p-cliente" style="display:none;"><option value="">Cargando...</option></select>
+              </div>
 
               <div class="row2">
                 <div>
@@ -361,8 +386,12 @@
 
               <div class="row2">
                 <div>
-                  <label for="p-aseguradora">Aseguradora (opcional)</label>
-                  <select id="p-aseguradora"><option value="">Sin especificar</option></select>
+                  <label for="p-aseguradora-buscar">Aseguradora (opcional)</label>
+                  <div class="combo">
+                    <input type="text" id="p-aseguradora-buscar" autocomplete="off" placeholder="Escribí para buscar...">
+                    <div class="combo-list" id="p-aseguradora-lista"></div>
+                    <select id="p-aseguradora" style="display:none;"><option value="">Sin especificar</option></select>
+                  </div>
                   <button type="button" class="toggle-add" data-toggle-add="aseguradora">+ Agregar aseguradora nueva</button>
                   <div class="add-inline" id="add-aseguradora-wrap" style="display:none;">
                     <input type="text" id="add-aseguradora-nombre" placeholder="Nombre de la aseguradora">
@@ -741,12 +770,87 @@
       });
     }
 
+    // ---------- Combo buscable: un <select> oculto sigue siendo la fuente de
+    // datos real (nada más del código cambia), pero se maneja con un input de
+    // texto + lista filtrable en vez del selector nativo — en el nativo no se
+    // puede escribir para buscar, ni en celular ni en la compu.
+    function activarComboBuscable(selectId, inputId, listaId) {
+      const select = document.getElementById(selectId);
+      const input = document.getElementById(inputId);
+      const lista = document.getElementById(listaId);
+
+      function opciones() {
+        return [...select.options].filter((o) => o.value !== '');
+      }
+
+      function etiquetaSeleccionada() {
+        const opt = select.options[select.selectedIndex];
+        return opt && opt.value ? opt.textContent : '';
+      }
+
+      function sincronizar() {
+        input.value = etiquetaSeleccionada();
+      }
+
+      function renderLista(filtro) {
+        const q = filtro.trim().toLowerCase();
+        const filtradas = opciones().filter((o) => o.textContent.toLowerCase().includes(q));
+        lista.innerHTML = filtradas.length
+          ? filtradas.map((o) => `<div class="combo-option" data-value="${o.value}">${o.textContent}</div>`).join('')
+          : '<div class="combo-empty">Sin resultados</div>';
+        lista.classList.add('open');
+      }
+
+      // Al enfocar: si el texto visible es justo la etiqueta ya elegida, arranca
+      // mostrando todas las opciones (para poder cambiarla); si no, filtra por
+      // lo que ya haya escrito.
+      input.addEventListener('focus', () => renderLista(input.value === etiquetaSeleccionada() ? '' : input.value));
+      input.addEventListener('input', () => renderLista(input.value));
+
+      // mousedown (no click) para que dispare antes del blur del input.
+      lista.addEventListener('mousedown', (e) => {
+        const opt = e.target.closest('.combo-option');
+        if (!opt) return;
+        select.value = opt.dataset.value;
+        input.value = opt.textContent;
+        lista.classList.remove('open');
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+      });
+
+      input.addEventListener('blur', () => {
+        setTimeout(() => {
+          lista.classList.remove('open');
+          sincronizar();
+        }, 120);
+      });
+
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') { lista.classList.remove('open'); input.blur(); }
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          const primera = lista.querySelector('.combo-option');
+          if (primera) {
+            select.value = primera.dataset.value;
+            input.value = primera.textContent;
+            lista.classList.remove('open');
+            select.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+        }
+      });
+
+      return sincronizar;
+    }
+
+    const sincronizarComboCliente = activarComboBuscable('p-cliente', 'p-cliente-buscar', 'p-cliente-lista');
+    const sincronizarComboAseguradora = activarComboBuscable('p-aseguradora', 'p-aseguradora-buscar', 'p-aseguradora-lista');
+
     // ---------- Cargar selects (cliente/ramo/aseguradora/productor) ----------
     async function cargarClienteSelect() {
       const clienteSelect = document.getElementById('p-cliente');
       const { data: clientes } = await supabase.from('clientes').select('id,nombre,apellido').order('nombre');
       clienteSelect.innerHTML = '<option value="">Elegí un cliente</option>' +
         (clientes || []).map(c => `<option value="${c.id}">${c.nombre} ${c.apellido}</option>`).join('');
+      sincronizarComboCliente();
     }
 
     async function cargarRamoSelect() {
@@ -761,6 +865,7 @@
       const { data: aseguradoras } = await supabase.from('aseguradoras').select('id,nombre').order('nombre');
       aseguradoraSelect.innerHTML = '<option value="">Sin especificar</option>' +
         (aseguradoras || []).map(a => `<option value="${a.id}">${a.nombre}</option>`).join('');
+      sincronizarComboAseguradora();
     }
 
     async function cargarProductorSelect() {
@@ -795,6 +900,7 @@
       if (error) { alert('Error: ' + error.message); return; }
       await cargarAseguradoraSelect();
       document.getElementById('p-aseguradora').value = data.id;
+      sincronizarComboAseguradora();
       input.value = '';
       document.getElementById('add-aseguradora-wrap').style.display = 'none';
     });
@@ -993,10 +1099,12 @@
 
       renovandoDesdePolizaId = polizaId;
       document.getElementById('p-cliente').value = poliza.cliente_id || '';
+      sincronizarComboCliente();
       document.getElementById('p-ramo').value = poliza.ramo_id;
       document.getElementById('p-ramo').dispatchEvent(new Event('change'));
       document.getElementById('p-detalle-ramo').value = poliza.detalle_ramo || '';
       document.getElementById('p-aseguradora').value = poliza.aseguradora_id || '';
+      sincronizarComboAseguradora();
       document.getElementById('p-productor').value = poliza.productor_id || '';
       document.getElementById('p-numero').value = ''; // la nueva póliza suele tener número propio
       document.getElementById('p-prima').value = poliza.prima || '';
@@ -1032,10 +1140,12 @@
 
       editingPolizaId = polizaId;
       document.getElementById('p-cliente').value = poliza.cliente_id || '';
+      sincronizarComboCliente();
       document.getElementById('p-ramo').value = poliza.ramo_id;
       document.getElementById('p-ramo').dispatchEvent(new Event('change'));
       document.getElementById('p-detalle-ramo').value = poliza.detalle_ramo || '';
       document.getElementById('p-aseguradora').value = poliza.aseguradora_id || '';
+      sincronizarComboAseguradora();
       document.getElementById('p-productor').value = poliza.productor_id || '';
       document.getElementById('p-numero').value = poliza.numero_poliza || '';
       document.getElementById('p-inicio').value = isoADatetimeLocal(poliza.fecha_inicio_vigencia);
@@ -1063,11 +1173,19 @@
       errorEl.style.display = 'none';
       okEl.style.display = 'none';
 
+      const clienteId = document.getElementById('p-cliente').value;
+      if (!clienteId) {
+        errorEl.textContent = 'Elegí un cliente de la lista antes de guardar.';
+        errorEl.style.display = 'block';
+        document.getElementById('p-cliente-buscar').focus();
+        return;
+      }
+
       const ramoSelect = document.getElementById('p-ramo');
       const esOtros = ramoSelect.selectedOptions[0]?.dataset.nombre === 'Otros';
 
       const datos = {
-        cliente_id: document.getElementById('p-cliente').value,
+        cliente_id: clienteId,
         ramo_id: ramoSelect.value,
         detalle_ramo: esOtros ? (document.getElementById('p-detalle-ramo').value.trim() || null) : null,
         aseguradora_id: document.getElementById('p-aseguradora').value || null,
