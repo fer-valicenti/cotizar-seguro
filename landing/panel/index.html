@@ -54,6 +54,19 @@
   }
   h1 { font-size: 20px; margin: 0 0 4px; }
   h2 { font-size: 17px; margin: 0 0 18px; }
+  .section-header-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
+  .section-header-row h2 { margin-bottom: 0; }
+  .btn-outline {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #fff; color: var(--color-primary);
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: 8px 14px;
+    font-size: 12.5px; font-weight: 700;
+    cursor: pointer; white-space: nowrap; font-family: inherit;
+  }
+  .btn-outline:hover { border-color: var(--color-primary); background: #EFF6FF; }
+  .btn-outline svg.icon { width: 15px; height: 15px; }
   p.sub { color: var(--color-muted); font-size: 13px; margin-top: 0; }
   label { display: block; font-size: 12.5px; font-weight: 700; color: var(--color-muted); text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 6px; margin-top: 14px; }
   input, select {
@@ -311,7 +324,13 @@
           </section>
 
           <section id="tab-clientes" style="display:none;">
-            <h2>Clientes y sus pólizas</h2>
+            <div class="section-header-row">
+              <h2>Clientes y sus pólizas</h2>
+              <button type="button" class="btn-outline" id="exportar-excel-btn">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Exportar a Excel
+              </button>
+            </div>
             <div class="search-box">
               <svg class="icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
               <input type="text" id="clientes-buscar" placeholder="Buscar por nombre, apellido o teléfono...">
@@ -452,6 +471,7 @@
 
   <script type="module">
     import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+    import * as XLSX from 'https://cdn.sheetjs.com/xlsx-latest/package/xlsx.mjs';
 
     const SUPABASE_URL = 'https://gnanlhiuygpepewgksnp.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImduYW5saGl1eWdwZXBld2drc25wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY1Njc0MjksImV4cCI6MjEwMjE0MzQyOX0.JSv3FC8jliDV_ZdDL_CkCXoBXbeSg0KzeABSJ9kG2FU';
@@ -560,7 +580,7 @@
           id, nombre, apellido, telefono, email, dni_cuit, fecha_nacimiento, origen_lead, notas,
           polizas(id, numero_poliza, estado, detalle_ramo, ramo_id, aseguradora_id, productor_id,
                    fecha_inicio_vigencia, fecha_vencimiento, prima, forma_pago, cantidad_cuotas,
-                   ramos(nombre))
+                   ramos(nombre), aseguradoras(nombre), productores(nombre))
         `)
         .order('nombre');
 
@@ -571,6 +591,59 @@
       ultimosClientes = data || [];
       renderClientes(ultimosClientes);
     }
+
+    // ---------- Exportar cartera a Excel ----------
+    function formatearFechaExport(fecha) {
+      if (!fecha) return '';
+      return new Date(fecha).toLocaleDateString('es-AR');
+    }
+
+    document.getElementById('exportar-excel-btn').addEventListener('click', () => {
+      if (!ultimosClientes.length) {
+        alert('No hay clientes cargados todavía para exportar.');
+        return;
+      }
+
+      const filas = [];
+      ultimosClientes.forEach((c) => {
+        const datosCliente = {
+          Nombre: c.nombre,
+          Apellido: c.apellido,
+          Telefono: c.telefono,
+          Email: c.email || '',
+          DNI_CUIT: c.dni_cuit || '',
+          Fecha_Nacimiento: c.fecha_nacimiento ? formatearFechaExport(`${c.fecha_nacimiento}T12:00:00-03:00`) : '',
+          Origen: c.origen_lead || '',
+        };
+
+        if (!c.polizas || !c.polizas.length) {
+          filas.push({ ...datosCliente, Ramo: '', Detalle_Ramo: '', Numero_Poliza: '', Aseguradora: '', Productor: '', Fecha_Inicio_Vigencia: '', Fecha_Vencimiento: '', Prima: '', Forma_Pago: '', Estado: '' });
+          return;
+        }
+
+        c.polizas.forEach((p) => {
+          filas.push({
+            ...datosCliente,
+            Ramo: p.ramos?.nombre || '',
+            Detalle_Ramo: p.detalle_ramo || '',
+            Numero_Poliza: p.numero_poliza || '',
+            Aseguradora: p.aseguradoras?.nombre || '',
+            Productor: p.productores?.nombre || '',
+            Fecha_Inicio_Vigencia: formatearFechaExport(p.fecha_inicio_vigencia),
+            Fecha_Vencimiento: formatearFechaExport(p.fecha_vencimiento),
+            Prima: p.prima ?? '',
+            Forma_Pago: p.forma_pago || '',
+            Estado: ESTADO_POLIZA_LABEL[p.estado] || p.estado || '',
+          });
+        });
+      });
+
+      const hoja = XLSX.utils.json_to_sheet(filas);
+      const libro = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(libro, hoja, 'Cartera');
+      const hoy = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Argentina/Buenos_Aires' });
+      XLSX.writeFile(libro, `cartera-${hoy}.xlsx`);
+    });
 
     function renderClientes(lista) {
       const cont = document.getElementById('clientes-lista');
