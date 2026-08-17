@@ -55,41 +55,45 @@
   }
   .hero > * { position: relative; }
 
-  /* ---------- Logos de aseguradoras (franja propia, abajo del todo, sin
-     cruzarse con el resto del contenido del hero) ---------- */
+  /* ---------- Logos de aseguradoras (franja animada, en el lugar donde
+     antes iban los nombres en texto) ---------- */
+  .logos-wrap { margin: 44px auto 0; max-width: 680px; }
+  .logos-label {
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(255,255,255,0.5);
+    font-weight: 700;
+    margin: 0 0 12px;
+  }
   .hero-logo-bg {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 8px;
-    height: 46px;
     display: flex;
     align-items: center;
     overflow: hidden;
-    pointer-events: none;
     -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
     mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
   }
   .hero-logo-track {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 16px;
     width: max-content;
     animation-name: hero-logo-scroll;
     animation-timing-function: linear;
     animation-iteration-count: infinite;
   }
+  .logos-wrap:hover .hero-logo-track { animation-play-state: paused; }
   .hero-logo-item {
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 40px;
-    padding: 0 14px;
+    height: 64px;
+    padding: 0 20px;
     background: rgba(255,255,255,0.96);
-    border-radius: 9px;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.18);
+    border-radius: 12px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.2);
   }
-  .hero-logo-item img { height: 32px; width: auto; max-width: 130px; object-fit: contain; display: block; }
+  .hero-logo-item img { height: 46px; width: auto; display: block; }
   @keyframes hero-logo-scroll {
     from { transform: translateX(0); }
     to { transform: translateX(-50%); }
@@ -143,50 +147,6 @@
     text-align: left;
   }
   .trust-item svg.icon { color: #7DD3FC; width: 18px; height: 18px; }
-
-  /* ---------- Aseguradoras (franja animada) ---------- */
-  .marquee-wrap { margin: 30px auto 0; max-width: 620px; }
-  .marquee-label {
-    font-size: 10.5px;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: rgba(255,255,255,0.5);
-    font-weight: 700;
-    margin: 0 0 10px;
-  }
-  .marquee-mask {
-    overflow: hidden;
-    -webkit-mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
-    mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
-  }
-  .marquee-track {
-    display: flex;
-    width: max-content;
-    gap: 10px;
-    animation: marquee-scroll 26s linear infinite;
-  }
-  .marquee-wrap:hover .marquee-track { animation-play-state: paused; }
-  .marquee-item {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    white-space: nowrap;
-    color: rgba(255,255,255,0.85);
-    font-weight: 700;
-    font-size: 12.5px;
-    padding: 7px 14px;
-    background: rgba(255,255,255,0.07);
-    border: 1px solid rgba(255,255,255,0.14);
-    border-radius: 30px;
-  }
-  .marquee-item svg.icon { width: 14px; height: 14px; color: #7DD3FC; }
-  @keyframes marquee-scroll {
-    from { transform: translateX(0); }
-    to { transform: translateX(-50%); }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .marquee-track { animation: none; }
-  }
 
   /* ---------- Cómo funciona ---------- */
   .steps {
@@ -353,7 +313,6 @@
 <body>
 
   <section class="hero">
-    <div class="hero-logo-bg" id="hero-logo-bg" style="display:none;"><div class="hero-logo-track" id="hero-logo-track"></div></div>
     <div class="topbrand fade-up">Cotizá tu seguro</div>
     <h1 class="fade-up d1">Cotizá tu seguro en minutos, sin vueltas</h1>
     <p class="fade-up d1">Te ayudamos a encontrar la cobertura ideal y seguimos toda la gestión por WhatsApp, de principio a fin.</p>
@@ -376,10 +335,10 @@
       </div>
     </div>
 
-    <div class="marquee-wrap fade-up d2" id="marquee-wrap" style="display:none;">
-      <p class="marquee-label">Trabajamos con estas aseguradoras</p>
-      <div class="marquee-mask">
-        <div class="marquee-track" id="marquee-track"></div>
+    <div class="logos-wrap fade-up d2" id="hero-logo-wrap" style="display:none;">
+      <p class="logos-label">Trabajamos con estas aseguradoras</p>
+      <div class="hero-logo-bg" id="hero-logo-bg">
+        <div class="hero-logo-track" id="hero-logo-track"></div>
       </div>
     </div>
   </section>
@@ -487,14 +446,13 @@
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     // Logos oficiales guardados en assets/aseguradoras/ — nombre de la
-    // aseguradora (en minúscula) -> archivo. Solo se usan como capa de fondo
-    // decorativa; si una aseguradora no tiene logo acá, simplemente no
-    // aparece en el fondo (la franja de nombres de adelante sí las muestra
-    // a todas igual).
+    // aseguradora (en minúscula) -> archivo. Si una aseguradora no tiene
+    // logo acá, simplemente no aparece en la franja.
     const LOGOS_ASEGURADORAS = {
       'federación patronal seguros': 'federacion-patronal-seguros.png',
       'la caja seguros': 'la-caja-seguros.png',
       'sancor seguros': 'sancor-seguros.png',
+      'san cristóbal seguros': 'san-cristobal-seguros.png',
       'mercantil andina': 'mercantil-andina.png',
       'rivadavia seguros': 'rivadavia-seguros.webp',
       'la segunda seguros': 'la-segunda-seguros.jpg',
@@ -543,8 +501,35 @@
         pila.push(x + 1, y, x - 1, y, x, y + 1, x, y - 1);
       }
 
+      // Recorta al contenido real (descarta el margen transparente que quedó
+      // alrededor) — si no, algunos logos con mucho aire de sobra en el
+      // archivo original se ven chicos aunque la tarjetita sea grande.
+      let minX = w, minY = h, maxX = -1, maxY = -1;
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+          if (d[(y * w + x) * 4 + 3] > 10) {
+            if (x < minX) minX = x;
+            if (x > maxX) maxX = x;
+            if (y < minY) minY = y;
+            if (y > maxY) maxY = y;
+          }
+        }
+      }
       ctx.putImageData(imageData, 0, 0);
-      return canvas.toDataURL('image/png');
+      if (maxX < minX || maxY < minY) return canvas.toDataURL('image/png'); // sin contenido detectado, no recorta
+
+      const MARGEN = 4;
+      const cw = Math.min(w, maxX - minX + 1 + MARGEN * 2);
+      const ch = Math.min(h, maxY - minY + 1 + MARGEN * 2);
+      const recorte = document.createElement('canvas');
+      recorte.width = cw;
+      recorte.height = ch;
+      recorte.getContext('2d').drawImage(
+        canvas,
+        Math.max(0, minX - MARGEN), Math.max(0, minY - MARGEN), cw, ch,
+        0, 0, cw, ch
+      );
+      return recorte.toDataURL('image/png');
     }
 
     function cargarImagenProcesada(archivo) {
@@ -559,8 +544,9 @@
       });
     }
 
-    // Capa de fondo con los logos, moviéndose despacio y tenue detrás de
-    // todo el contenido del hero (fondo azul).
+    // Franja animada con los logos reales de las aseguradoras cargadas en el
+    // panel. Hay que hacer visible el contenedor ANTES de medir el ancho —
+    // con display:none el navegador mide 0px y la duración calculada sale mal.
     async function cargarLogosDeFondo(nombres) {
       const disponibles = nombres
         .map((nombre) => ({ nombre, archivo: LOGOS_ASEGURADORAS[nombre.toLowerCase().trim()] }))
@@ -587,7 +573,7 @@
         track.appendChild(item);
       });
 
-      document.getElementById('hero-logo-bg').style.display = 'flex';
+      document.getElementById('hero-logo-wrap').style.display = 'block';
 
       const VELOCIDAD_PX_POR_SEG = 26;
       const anchoBloque = track.scrollWidth / 2;
@@ -605,33 +591,7 @@
       const nombres = data.map((a) => a.nombre).filter(Boolean);
       if (!nombres.length) return;
 
-      cargarLogosDeFondo(nombres); // no bloquea el resto — se procesa y aparece cuando esté listo
-
-      // Se repite lo necesario para que la tira nunca se quede corta (si hay
-      // pocas aseguradoras cargadas) y el loop de -50% siempre cierre parejo.
-      const repeticiones = nombres.length < 6 ? 4 : 2;
-      const bloque = Array.from({ length: repeticiones }, () => nombres).flat();
-      const track = document.getElementById('marquee-track');
-
-      [...bloque, ...bloque].forEach((nombre) => {
-        const item = document.createElement('span');
-        item.className = 'marquee-item';
-        item.innerHTML = '<svg class="icon" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>';
-        item.append(nombre);
-        track.appendChild(item);
-      });
-
-      // Hay que hacerlo visible ANTES de medir el ancho — con display:none
-      // el navegador mide 0px y la duración calculada abajo sale mal.
-      document.getElementById('marquee-wrap').style.display = 'block';
-
-      // Velocidad constante (px/seg) en vez de duración fija — así, sin
-      // importar cuántas aseguradoras haya cargadas, siempre se desliza al
-      // mismo ritmo pausado en vez de acelerarse con más nombres.
-      const VELOCIDAD_PX_POR_SEG = 40;
-      const anchoBloque = track.scrollWidth / 2;
-      const duracionSeg = Math.max(anchoBloque / VELOCIDAD_PX_POR_SEG, 18);
-      track.style.animationDuration = `${duracionSeg}s`;
+      cargarLogosDeFondo(nombres);
     }
     cargarAseguradoras();
 
